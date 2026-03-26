@@ -1,1 +1,15 @@
+[theme]
+# اللون الأساسي للأزرار والروابط (أزرق سيان رياضي)
+primaryColor = "#00A3C4"
 
+# إعدادات الوضع الداكن (سيستخدمها ستريم ليت بشكل افتراضي)
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#161B22"
+textColor = "#EAEAEA"
+font = "sans serif"
+
+# إعدادات الوضع الفاتح (للتكيف التلقائي)
+[theme.light]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
