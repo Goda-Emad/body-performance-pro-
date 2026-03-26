@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.model_loader import load_models
 from utils.prediction import predict_classification, predict_regression
-from utils.report_generator import generate_summary
+# from utils.report_generator import generate_summary  # تم تعطيله مؤقتاً
 import io
 
 # ============================================
@@ -157,7 +157,7 @@ with col_input:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ============================================
-# PREDICTION FUNCTION
+# PREDICTION FUNCTIONS
 # ============================================
 def preprocess_input(input_data, scaler):
     """Preprocess single input sample"""
