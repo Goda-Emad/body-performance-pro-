@@ -8,15 +8,6 @@ import pickle
 import os
 from typing import Dict, Any
 
-# ============================================
-# تحديد المسار المطلق للمشروع
-# ============================================
-# BASE_DIR = المسار الرئيسي للمشروع (body-performance-pro)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# دمج المسار الرئيسي مع مجلد models
-MODELS_DIR = os.path.join(BASE_DIR, 'models')
-
 # تعيين أسماء الملفات
 MODEL_FILES = {
     'knn': 'knn_model.pkl',
@@ -32,15 +23,6 @@ MODEL_FILES = {
 }
 
 
-def load_pickle_model(file_path: str):
-    """Load a model from a pickle file."""
-    try:
-        with open(file_path, 'rb') as f:
-            return pickle.load(f)
-    except Exception as e:
-        raise Exception(f"Error loading {file_path}: {e}")
-
-
 def load_models() -> Dict[str, Any]:
     """
     Load all trained models and scaler.
@@ -51,35 +33,20 @@ def load_models() -> Dict[str, Any]:
         Dictionary containing all models and scaler
     """
     models = {}
-    missing = []
     
-    # طباعة معلومات Debug لمعرفة المسار
-    print(f"DEBUG: BASE_DIR = {BASE_DIR}")
-    print(f"DEBUG: MODELS_DIR = {MODELS_DIR}")
-    print(f"DEBUG: MODELS_DIR exists = {os.path.exists(MODELS_DIR)}")
+    # المسار المطلق للمشروع (مهما كان مكان التشغيل)
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    MODELS_DIR = os.path.join(BASE_DIR, 'models')
     
-    if not os.path.exists(MODELS_DIR):
-        raise Exception(f"Models directory '{MODELS_DIR}' not found. Please ensure models are properly set up.")
-    
-    # عرض الملفات الموجودة
-    print(f"DEBUG: Files in models: {os.listdir(MODELS_DIR)}")
+    print(f"DEBUG: Loading models from: {MODELS_DIR}")
     
     for model_key, file_name in MODEL_FILES.items():
         file_path = os.path.join(MODELS_DIR, file_name)
         
-        if os.path.exists(file_path):
-            try:
-                models[model_key] = load_pickle_model(file_path)
-                print(f"✅ Loaded {model_key}")
-            except Exception as e:
-                print(f"❌ Failed to load {model_key}: {e}")
-                missing.append(model_key)
-        else:
-            print(f"❌ File not found: {file_path}")
-            missing.append(model_key)
-    
-    if missing:
-        raise Exception(f"Failed to load models: {missing}")
+        # تحميل النموذج مباشرة (بدون try/except لإظهار الخطأ الحقيقي)
+        with open(file_path, 'rb') as f:
+            models[model_key] = pickle.load(f)
+        print(f"✅ Loaded {model_key}")
     
     return models
 
@@ -89,8 +56,12 @@ def load_single_model(model_name: str):
     if model_name not in MODEL_FILES:
         raise ValueError(f"Unknown model: {model_name}")
     
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    MODELS_DIR = os.path.join(BASE_DIR, 'models')
     file_path = os.path.join(MODELS_DIR, MODEL_FILES[model_name])
-    return load_pickle_model(file_path)
+    
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
 
 
 def get_available_models() -> Dict[str, list]:
@@ -136,6 +107,9 @@ def get_model_info(model_name: str) -> Dict[str, Any]:
 def check_models_integrity() -> Dict[str, bool]:
     """Check if all model files exist."""
     results = {}
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    MODELS_DIR = os.path.join(BASE_DIR, 'models')
+    
     for model_key, file_name in MODEL_FILES.items():
         file_path = os.path.join(MODELS_DIR, file_name)
         results[model_key] = os.path.exists(file_path)
