@@ -11,7 +11,7 @@ from typing import Dict, Any
 # مسار مجلد النماذج
 MODELS_DIR = 'models'
 
-# تعيين أسماء الملفات
+# تعيين أسماء الملفات - تطابق الأسماء في GitHub
 MODEL_FILES = {
     'knn': 'knn_model.pkl',
     'dt': 'dt_model.pkl',
@@ -28,11 +28,8 @@ MODEL_FILES = {
 
 def load_pickle_model(file_path: str):
     """Load a model from a pickle file."""
-    try:
-        with open(file_path, 'rb') as f:
-            return pickle.load(f)
-    except Exception as e:
-        raise Exception(f"Error loading {file_path}: {e}")
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
 
 
 def load_models() -> Dict[str, Any]:
@@ -47,13 +44,16 @@ def load_models() -> Dict[str, Any]:
     models = {}
     missing = []
     
+    # طباعة مسار المجلد للتأكد
+    print(f"Looking for models in: {os.path.abspath(MODELS_DIR)}")
+    
     for model_key, file_name in MODEL_FILES.items():
         file_path = os.path.join(MODELS_DIR, file_name)
         
         if os.path.exists(file_path):
             try:
                 models[model_key] = load_pickle_model(file_path)
-                print(f"✅ Loaded {model_key}")
+                print(f"✅ Loaded {model_key} from {file_name}")
             except Exception as e:
                 print(f"❌ Failed to load {model_key}: {e}")
                 missing.append(model_key)
