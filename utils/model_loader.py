@@ -11,7 +11,7 @@ from typing import Dict, Any
 # مسار مجلد النماذج
 MODELS_DIR = 'models'
 
-# تعيين أسماء الملفات - تأكد من تطابق الأسماء
+# تعيين أسماء الملفات - تطابق الأسماء في GitHub بالضبط
 MODEL_FILES = {
     'knn': 'knn_model.pkl',
     'dt': 'dt_model.pkl',
@@ -21,7 +21,7 @@ MODEL_FILES = {
     'scaler': 'scaler.pkl',
     'linear_regression': 'linear_regression.pkl',
     'dt_regressor': 'dt_regressor.pkl',
-    'svr': 'svr_model.pkl',          # ← اسم الملف الصحيح
+    'svr': 'svr_model.pkl',          # ← الملف الصحيح
     'mlp_regressor': 'mlp_regressor.pkl',
 }
 
@@ -47,10 +47,7 @@ def load_models() -> Dict[str, Any]:
     models = {}
     missing = []
     
-    # Debug: print current directory and models folder
-    print(f"Current directory: {os.getcwd()}")
-    print(f"Models folder exists: {os.path.exists(MODELS_DIR)}")
-    
+    # Debug: print what's in models folder
     if os.path.exists(MODELS_DIR):
         print(f"Files in models/: {os.listdir(MODELS_DIR)}")
     
@@ -60,7 +57,7 @@ def load_models() -> Dict[str, Any]:
         if os.path.exists(file_path):
             try:
                 models[model_key] = load_pickle_model(file_path)
-                print(f"✅ Loaded {model_key} from {file_name}")
+                print(f"✅ Loaded {model_key}")
             except Exception as e:
                 print(f"❌ Failed to load {model_key}: {e}")
                 missing.append(model_key)
