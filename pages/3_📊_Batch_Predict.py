@@ -17,6 +17,31 @@ from utils.prediction import predict_batch, predict_classification
 from utils.visualizations import create_distribution_plot, create_comparison_chart
 # from utils.report_generator import ReportGenerator  # Temporarily disabled - reportlab not installed
 import time
+import os
+
+# ============================================
+# DEBUG: Check models folder
+# ============================================
+st.write("=== DEBUG: Checking models folder ===")
+if os.path.exists('models'):
+    st.write(f"✅ models folder exists")
+    files = os.listdir('models')
+    st.write(f"Files: {files}")
+    for f in files:
+        size = os.path.getsize(f'models/{f}')
+        st.write(f"  - {f}: {size} bytes")
+else:
+    st.write("❌ models folder NOT found!")
+
+# Test loading one model
+try:
+    import pickle
+    with open('models/knn_model.pkl', 'rb') as f:
+        test_model = pickle.load(f)
+    st.write("✅ Successfully loaded knn_model.pkl")
+except Exception as e:
+    st.write(f"❌ Failed to load knn_model.pkl: {e}")
+st.write("=== END DEBUG ===")
 
 # إعدادات الصفحة
 st.set_page_config(
