@@ -3,33 +3,43 @@
 /* ========================================= */
 
 /* ========================================= */
-/* 1. تنسيق الكروت الاحترافية (Glassmorphism) */
+/* 1. تنسيق الكروت الاحترافية (Glassmorphism & Cohesive) */
 /* ========================================= */
 
+/* استهداف الـ Metric Cards وكلاسات الكروت الأخرى */
 div[data-testid="stMetric"], 
 .stMetric, 
 .main-card,
-div.element-container {
+/* استهداف كروت الـ st.info في Explore */
+div.element-container,
+div[data-testid="stAlert"] {
     background: var(--st-color-background-secondary) !important;
     border-radius: 12px;
     padding: 20px;
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     text-align: center;
 }
 
+/* تأثير الـ Hover على الكروت لجعلها حية */
 div[data-testid="stMetric"]:hover, 
 .stMetric:hover, 
 .main-card:hover,
-div.element-container:hover {
+div.element-container:hover,
+div[data-testid="stAlert"]:hover {
     transform: translateY(-5px);
     border-color: var(--st-color-primary) !important;
-    box-shadow: 0 8px 25px rgba(0, 163, 196, 0.2);
+    box-shadow: 0 8px 30px rgba(0, 163, 196, 0.2);
+}
+
+/* حل مشكلة تباين نصوص كروت الـ st.info في Explore */
+div[data-testid="stAlert"] p {
+    color: var(--st-color-text) !important;
 }
 
 /* ========================================= */
-/* 2. تحسين لون العناوين والنصوص (حل مشكلة التباين) */
+/* 2. تحسين لون العناوين والنصوص */
 /* ========================================= */
 
 h1, h2, h3, h4, h5, h6 {
@@ -63,7 +73,6 @@ p {
     border-right: 1px solid rgba(0, 163, 196, 0.1);
 }
 
-/* الروابط في السايد بار */
 [data-testid="stSidebarNav"] a {
     color: var(--st-color-text) !important;
     text-decoration: none !important;
@@ -79,7 +88,7 @@ p {
 }
 
 /* ========================================= */
-/* 4. تجميل الـ Header (العنوان الرئيسي) */
+/* 4. تجميل الـ Header */
 /* ========================================= */
 
 .main-header {
@@ -122,11 +131,6 @@ p {
 .stButton > button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 163, 196, 0.4) !important;
-    background: linear-gradient(135deg, #00B8DC 0%, #0096B8 100%) !important;
-}
-
-.stButton > button:active {
-    transform: translateY(0);
 }
 
 /* ========================================= */
@@ -135,8 +139,7 @@ p {
 
 .stTextInput > div > div > input,
 .stNumberInput > div > div > input,
-.stSelectbox > div > div > select,
-.stTextArea > div > textarea {
+.stSelectbox > div > div > select {
     background-color: var(--st-color-background-secondary) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 8px !important;
@@ -145,12 +148,9 @@ p {
 }
 
 .stTextInput > div > div > input:focus,
-.stNumberInput > div > div > input:focus,
-.stSelectbox > div > div > select:focus,
-.stTextArea > div > textarea:focus {
+.stNumberInput > div > div > input:focus {
     border-color: var(--st-color-primary) !important;
     box-shadow: 0 0 0 2px rgba(0, 163, 196, 0.2) !important;
-    outline: none !important;
 }
 
 /* ========================================= */
@@ -161,15 +161,12 @@ p {
     background: var(--st-color-background-secondary) !important;
     border-radius: 12px !important;
     overflow: hidden !important;
-    width: 100% !important;
 }
 
 .dataframe th {
     background: var(--st-color-primary) !important;
     color: white !important;
     padding: 10px !important;
-    font-weight: 600 !important;
-    text-align: center !important;
 }
 
 .dataframe td {
@@ -177,7 +174,6 @@ p {
     color: var(--st-color-text) !important;
     padding: 8px 10px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-    text-align: center !important;
 }
 
 .dataframe tr:hover td {
@@ -200,9 +196,7 @@ p {
     background: transparent !important;
     border-radius: 8px !important;
     color: var(--st-color-text-secondary) !important;
-    font-weight: 500 !important;
     padding: 8px 20px !important;
-    transition: all 0.2s ease !important;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
@@ -216,36 +210,7 @@ p {
 }
 
 /* ========================================= */
-/* 9. تنسيق الـ Expander */
-/* ========================================= */
-
-.streamlit-expanderHeader {
-    background: var(--st-color-background-secondary) !important;
-    border-radius: 10px !important;
-    color: var(--st-color-primary) !important;
-    font-weight: 600 !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    padding: 12px !important;
-}
-
-.streamlit-expanderHeader:hover {
-    background: rgba(0, 163, 196, 0.1) !important;
-    border-color: var(--st-color-primary) !important;
-}
-
-/* ========================================= */
-/* 10. تنسيق الـ Alert (تنبيهات) */
-/* ========================================= */
-
-.stAlert {
-    background: rgba(0, 163, 196, 0.1) !important;
-    border-left: 4px solid var(--st-color-primary) !important;
-    border-radius: 8px !important;
-    color: var(--st-color-text) !important;
-}
-
-/* ========================================= */
-/* 11. تنسيق الفوتر (Footer) */
+/* 9. تنسيق الفوتر */
 /* ========================================= */
 
 .footer {
@@ -260,35 +225,7 @@ p {
 }
 
 /* ========================================= */
-/* 12. تنسيق البادج (Badges) */
-/* ========================================= */
-
-.badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    margin: 0 4px;
-}
-
-.badge-primary {
-    background: linear-gradient(135deg, #00A3C4 0%, #0082A0 100%);
-    color: white;
-}
-
-.badge-success {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-}
-
-.badge-warning {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: white;
-}
-
-/* ========================================= */
-/* 13. تنسيق شريط التمرير (Scrollbar) */
+/* 10. تنسيق شريط التمرير */
 /* ========================================= */
 
 ::-webkit-scrollbar {
@@ -304,8 +241,4 @@ p {
 ::-webkit-scrollbar-thumb {
     background: var(--st-color-primary);
     border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #00B8DC;
 }
