@@ -28,20 +28,6 @@ def create_confusion_matrix(
 ) -> go.Figure:
     """
     Create an interactive confusion matrix using Plotly.
-    
-    Parameters:
-    -----------
-    cm : np.ndarray
-        Confusion matrix
-    class_names : list
-        Names of classes
-    title : str
-        Chart title
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure object
     """
     # Normalize
     cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -104,20 +90,6 @@ def create_comparison_chart(
 ) -> go.Figure:
     """
     Create a bar chart comparing model performances.
-    
-    Parameters:
-    -----------
-    results : dict
-        Dictionary of model names and their metrics
-    metric : str
-        Metric to compare ('Accuracy', 'Precision', 'Recall', 'F1', 'RMSE', 'R2')
-    title : str
-        Chart title
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure object
     """
     models = list(results.keys())
     values = [results[m].get(metric, 0) for m in models]
@@ -126,13 +98,13 @@ def create_comparison_chart(
     colors = []
     for v in values:
         if v >= 0.7:
-            colors.append('#1e3a5f')  # Best
+            colors.append('#1e3a5f')
         elif v >= 0.65:
-            colors.append('#2c4e6e')  # Good
+            colors.append('#2c4e6e')
         elif v >= 0.6:
-            colors.append('#4682b4')  # Average
+            colors.append('#4682b4')
         else:
-            colors.append('#94a3b8')  # Below average
+            colors.append('#94a3b8')
     
     fig = go.Figure(data=[
         go.Bar(
@@ -154,8 +126,9 @@ def create_comparison_chart(
         showlegend=False
     )
     
+    # ✅ FIXED: update_yaxes (plural) instead of update_yaxis
     if metric in ['Accuracy', 'Precision', 'Recall', 'F1']:
-        fig.update_yaxis(range=[0, 1], tickformat='.0%')
+        fig.update_yaxes(range=[0, 1], tickformat='.0%')
     
     return fig
 
@@ -166,18 +139,6 @@ def create_model_comparison_dashboard(
 ) -> go.Figure:
     """
     Create a combined dashboard comparing all models.
-    
-    Parameters:
-    -----------
-    classification_results : dict
-        Classification model results
-    regression_results : dict
-        Regression model results
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure with subplots
     """
     fig = make_subplots(
         rows=2, cols=2,
@@ -208,7 +169,7 @@ def create_model_comparison_dashboard(
     )
     
     # Classification F1
-    f1_values = [classification_results[m].get('F1', 0) for m in clf_models]
+    f1_values = [classification_results[m].get('F1 Score', 0) for m in clf_models]
     
     fig.add_trace(
         go.Bar(
@@ -276,22 +237,7 @@ def create_feature_importance_chart(
 ) -> go.Figure:
     """
     Create a horizontal bar chart for feature importance.
-    
-    Parameters:
-    -----------
-    feature_names : list
-        Feature names
-    importances : list
-        Importance scores
-    title : str
-        Chart title
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure object
     """
-    # Sort by importance
     sorted_idx = np.argsort(importances)
     sorted_names = [feature_names[i] for i in sorted_idx]
     sorted_imps = [importances[i] for i in sorted_idx]
@@ -327,30 +273,13 @@ def create_prediction_gauge(
 ) -> go.Figure:
     """
     Create a gauge chart for prediction confidence.
-    
-    Parameters:
-    -----------
-    value : float
-        Confidence value
-    min_val : float
-        Minimum value
-    max_val : float
-        Maximum value
-    title : str
-        Chart title
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure object
     """
-    # Determine color
     if value >= 0.8:
-        color = '#10b981'  # Green
+        color = '#10b981'
     elif value >= 0.6:
-        color = '#f59e0b'  # Orange
+        color = '#f59e0b'
     else:
-        color = '#ef4444'  # Red
+        color = '#ef4444'
     
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
@@ -385,24 +314,9 @@ def create_distribution_plot(
 ) -> go.Figure:
     """
     Create a distribution plot with histogram and KDE.
-    
-    Parameters:
-    -----------
-    data : pd.Series
-        Data to plot
-    feature_name : str
-        Name of the feature
-    bins : int
-        Number of bins
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure object
     """
     fig = go.Figure()
     
-    # Histogram
     fig.add_trace(go.Histogram(
         x=data,
         nbinsx=bins,
@@ -412,7 +326,6 @@ def create_distribution_plot(
         histnorm='probability density'
     ))
     
-    # KDE
     from scipy import stats
     kde = stats.gaussian_kde(data.dropna())
     x_range = np.linspace(data.min(), data.max(), 200)
@@ -425,7 +338,6 @@ def create_distribution_plot(
         fillcolor='rgba(245, 158, 11, 0.1)'
     ))
     
-    # Add mean and median lines
     mean_val = data.mean()
     median_val = data.median()
     
@@ -451,18 +363,6 @@ def create_correlation_heatmap(
 ) -> go.Figure:
     """
     Create a correlation heatmap.
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Dataframe with features
-    title : str
-        Chart title
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure object
     """
     corr = df.corr()
     
@@ -497,24 +397,6 @@ def create_scatter_colored(
 ) -> go.Figure:
     """
     Create a colored scatter plot.
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Dataframe
-    x_col : str
-        X-axis column
-    y_col : str
-        Y-axis column
-    color_col : str
-        Column for coloring
-    title : str
-        Chart title
-    
-    Returns:
-    --------
-    go.Figure
-        Plotly figure object
     """
     fig = px.scatter(
         df,
@@ -536,17 +418,7 @@ def create_scatter_colored(
 
 def fig_to_base64(fig: go.Figure) -> str:
     """
-    Convert Plotly figure to base64 string for embedding in HTML/PDF.
-    
-    Parameters:
-    -----------
-    fig : go.Figure
-        Plotly figure
-    
-    Returns:
-    --------
-    str
-        Base64 encoded image
+    Convert Plotly figure to base64 string.
     """
     img_bytes = fig.to_image(format="png", width=800, height=500)
     base64_str = base64.b64encode(img_bytes).decode()
@@ -559,21 +431,7 @@ def create_static_chart(
     title: str = None
 ) -> io.BytesIO:
     """
-    Create a static matplotlib chart for PDF reports.
-    
-    Parameters:
-    -----------
-    data : pd.Series
-        Data to plot
-    chart_type : str
-        Type of chart ('histogram', 'boxplot', 'bar')
-    title : str
-        Chart title
-    
-    Returns:
-    --------
-    io.BytesIO
-        Image buffer
+    Create a static matplotlib chart.
     """
     fig, ax = plt.subplots(figsize=(8, 5))
     
@@ -606,25 +464,4 @@ def create_static_chart(
 
 
 if __name__ == "__main__":
-    # Test the module
-    print("Testing visualizations module...")
-    
-    # Test correlation heatmap
-    test_df = pd.DataFrame({
-        'A': np.random.randn(100),
-        'B': np.random.randn(100),
-        'C': np.random.randn(100)
-    })
-    fig = create_correlation_heatmap(test_df)
-    print("✅ Correlation heatmap created")
-    
-    # Test comparison chart
-    test_results = {
-        'Model A': {'Accuracy': 0.72, 'F1': 0.71},
-        'Model B': {'Accuracy': 0.68, 'F1': 0.67},
-        'Model C': {'Accuracy': 0.65, 'F1': 0.64}
-    }
-    fig = create_comparison_chart(test_results, 'Accuracy')
-    print("✅ Comparison chart created")
-    
-    print("\n✅ visualizations.py loaded successfully")
+    print("✅ visualizations.py loaded successfully")
