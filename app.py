@@ -26,11 +26,11 @@ st.set_page_config(
 )
 
 # ============================================
-# LOGO IN SIDEBAR
+# LOGO IN SIDEBAR - ✅ FIXED: use width instead of use_container_width
 # ============================================
 logo_path = os.path.join('assets', 'logo.png')
 if os.path.exists(logo_path):
-    st.sidebar.image(logo_path, use_container_width=True)
+    st.sidebar.image(logo_path, width=150)
 st.sidebar.markdown("---")
 
 # ============================================
