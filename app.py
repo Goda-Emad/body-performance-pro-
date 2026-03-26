@@ -15,7 +15,9 @@ import sys
 # إضافة مسار المشروع
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# إعدادات الصفحة
+# ============================================
+# PAGE CONFIGURATION - يجب أن يكون أول أمر
+# ============================================
 st.set_page_config(
     page_title="Body Performance Analytics",
     page_icon="🏋️",
@@ -23,14 +25,20 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# تحميل CSS المخصص
+# ============================================
+# LOAD CUSTOM CSS
+# ============================================
 def load_css():
     """Load custom CSS from assets folder"""
-    try:
-        with open(os.path.join('assets', 'style.css'), 'r', encoding='utf-8') as f:
-            css = f.read()
-        st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
-    except FileNotFoundError:
+    css_path = os.path.join('assets', 'style.css')
+    if os.path.exists(css_path):
+        try:
+            with open(css_path, 'r', encoding='utf-8') as f:
+                css = f.read()
+            st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+        except Exception as e:
+            st.write(f"⚠️ Could not load CSS: {e}")
+    else:
         # CSS احتياطي في حال عدم وجود الملف
         st.markdown("""
         <style>
@@ -87,23 +95,6 @@ def load_css():
             text-align: center;
             margin-top: 0.3rem;
         }
-        .feature-card {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 1rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .feature-card:hover {
-            background: #1e3a5f;
-            color: white;
-            transform: translateY(-3px);
-        }
-        .feature-icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
         .footer {
             text-align: center;
             padding: 2rem;
@@ -114,25 +105,20 @@ def load_css():
             font-size: 0.85rem;
             border-top: 1px solid #e2e8f0;
         }
-        .badge {
-            display: inline-block;
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .badge-primary {
-            background: #1e3a5f;
-            color: white;
-        }
-        .badge-success {
-            background: #10b981;
-            color: white;
-        }
         </style>
         """, unsafe_allow_html=True)
 
 load_css()
+
+# ============================================
+# LOGO SECTION
+# ============================================
+logo_path = os.path.join('assets', 'logo.png')
+if os.path.exists(logo_path):
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image(logo_path, width=100, use_container_width=False)
+        st.markdown("<br>", unsafe_allow_html=True)
 
 # ============================================
 # HEADER SECTION
@@ -196,7 +182,7 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown("""
-    <div class="card" style="text-align: center; cursor: pointer;" onclick="window.location.href='/?page=1_🎯_Predict'">
+    <div class="card" style="text-align: center;">
         <div class="feature-icon">🎯</div>
         <div class="card-title">Individual Prediction</div>
         <p style="color: #64748b;">Enter participant data and get real-time predictions for performance class and broad jump distance.</p>
@@ -457,6 +443,11 @@ st.markdown("""
 # SIDEBAR
 # ============================================
 with st.sidebar:
+    # Logo in sidebar
+    logo_path = os.path.join('assets', 'logo.png')
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=60)
+    
     st.markdown("### 🏋️ Body Performance Analytics")
     st.markdown("---")
     
