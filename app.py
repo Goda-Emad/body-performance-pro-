@@ -39,74 +39,7 @@ def load_css():
         except Exception as e:
             st.write(f"⚠️ Could not load CSS: {e}")
     else:
-        # CSS احتياطي في حال عدم وجود الملف
-        st.markdown("""
-        <style>
-        .main-header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2c4e6e 100%);
-            padding: 2rem 2rem 1.5rem 2rem;
-            border-radius: 0 0 30px 30px;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        .main-title {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: white;
-            text-align: center;
-            letter-spacing: -0.02em;
-        }
-        .main-subtitle {
-            font-size: 1.1rem;
-            color: rgba(255,255,255,0.9);
-            text-align: center;
-            margin-top: 0.5rem;
-        }
-        .card {
-            background: white;
-            border-radius: 20px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            margin-bottom: 1rem;
-            transition: transform 0.3s ease;
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        }
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1e3a5f;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #1e3a5f;
-            text-align: center;
-        }
-        .metric-label {
-            font-size: 0.85rem;
-            color: #64748b;
-            text-align: center;
-            margin-top: 0.3rem;
-        }
-        .footer {
-            text-align: center;
-            padding: 2rem;
-            margin-top: 3rem;
-            background: white;
-            border-radius: 20px;
-            color: #64748b;
-            font-size: 0.85rem;
-            border-top: 1px solid #e2e8f0;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        st.write("⚠️ CSS file not found at assets/style.css")
 
 load_css()
 
@@ -117,7 +50,7 @@ logo_path = os.path.join('assets', 'logo.png')
 if os.path.exists(logo_path):
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image(logo_path, width=100, use_container_width=False)
+        st.image(logo_path, width=100)
         st.markdown("<br>", unsafe_allow_html=True)
 
 # ============================================
