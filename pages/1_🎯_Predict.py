@@ -16,7 +16,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.model_loader import load_models
 from utils.prediction import predict_classification, predict_regression
-# from utils.report_generator import generate_summary  # تم تعطيله مؤقتاً
 import io
 
 # ============================================
@@ -35,9 +34,12 @@ def load_css():
     """Load custom CSS from assets folder"""
     css_path = os.path.join('assets', 'style.css')
     if os.path.exists(css_path):
-        with open(css_path, 'r', encoding='utf-8') as f:
-            css = f.read()
-        st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+        try:
+            with open(css_path, 'r', encoding='utf-8') as f:
+                css = f.read()
+            st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+        except:
+            pass
     else:
         # Fallback CSS if file not found
         st.markdown("""
