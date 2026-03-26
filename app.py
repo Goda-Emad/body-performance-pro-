@@ -26,27 +26,80 @@ st.set_page_config(
 )
 
 # ============================================
-# LOAD CUSTOM CSS
+# LOAD CUSTOM CSS - IMPORTANT!
 # ============================================
 def load_css():
     """Load custom CSS from assets folder"""
-    css_path = os.path.join('assets', 'style.css')
+    css_path = os.path.join(os.path.dirname(__file__), 'assets', 'style.css')
+    
+    # Debug: print the path to see if it's correct
+    print(f"Looking for CSS at: {css_path}")
+    
     if os.path.exists(css_path):
         try:
             with open(css_path, 'r', encoding='utf-8') as f:
                 css = f.read()
             st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+            print("✅ CSS loaded successfully")
         except Exception as e:
-            st.write(f"⚠️ Could not load CSS: {e}")
+            print(f"❌ Error loading CSS: {e}")
     else:
-        st.write("⚠️ CSS file not found at assets/style.css")
+        print(f"❌ CSS file not found at: {css_path}")
+        # Fallback CSS
+        st.markdown("""
+        <style>
+        .main-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c4e6e 100%);
+            padding: 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+        .main-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+        }
+        .main-subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1e3a5f;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e3a5f;
+            text-align: center;
+        }
+        .metric-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-align: center;
+        }
+        </style>
+        """, unsafe_allow_html=True)
 
+# Load CSS
 load_css()
 
 # ============================================
 # LOGO SECTION
 # ============================================
-logo_path = os.path.join('assets', 'logo.png')
+logo_path = os.path.join(os.path.dirname(__file__), 'assets', 'logo.png')
 if os.path.exists(logo_path):
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -118,7 +171,7 @@ with col1:
     <div class="card" style="text-align: center;">
         <div class="feature-icon">🎯</div>
         <div class="card-title">Individual Prediction</div>
-        <p style="color: #64748b;">Enter participant data and get real-time predictions for performance class and broad jump distance.</p>
+        <p style="color: #64748b;">Enter participant data and get real-time predictions.</p>
         <span class="badge badge-primary">Try Now</span>
     </div>
     """, unsafe_allow_html=True)
@@ -131,7 +184,7 @@ with col2:
     <div class="card" style="text-align: center;">
         <div class="feature-icon">⚙️</div>
         <div class="card-title">Model Tuning</div>
-        <p style="color: #64748b;">Adjust hyperparameters (k, max_depth, kernel) and see real-time performance changes.</p>
+        <p style="color: #64748b;">Adjust hyperparameters and see real-time changes.</p>
         <span class="badge badge-primary">Experiment</span>
     </div>
     """, unsafe_allow_html=True)
@@ -144,7 +197,7 @@ with col3:
     <div class="card" style="text-align: center;">
         <div class="feature-icon">📊</div>
         <div class="card-title">Batch Prediction</div>
-        <p style="color: #64748b;">Upload CSV files and get predictions for multiple participants at once.</p>
+        <p style="color: #64748b;">Upload CSV and get predictions for multiple participants.</p>
         <span class="badge badge-primary">Upload</span>
     </div>
     """, unsafe_allow_html=True)
@@ -159,7 +212,7 @@ with col1:
     <div class="card" style="text-align: center;">
         <div class="feature-icon">📈</div>
         <div class="card-title">Compare Models</div>
-        <p style="color: #64748b;">Compare performance of all 8 models with interactive charts and tables.</p>
+        <p style="color: #64748b;">Compare performance of all models.</p>
         <span class="badge badge-primary">Analyze</span>
     </div>
     """, unsafe_allow_html=True)
@@ -172,7 +225,7 @@ with col2:
     <div class="card" style="text-align: center;">
         <div class="feature-icon">📄</div>
         <div class="card-title">Generate Report</div>
-        <p style="color: #64748b;">Create comprehensive PDF reports with analysis, predictions, and recommendations.</p>
+        <p style="color: #64748b;">Create comprehensive PDF reports.</p>
         <span class="badge badge-primary">Download</span>
     </div>
     """, unsafe_allow_html=True)
@@ -185,7 +238,7 @@ with col3:
     <div class="card" style="text-align: center;">
         <div class="feature-icon">ℹ️</div>
         <div class="card-title">About</div>
-        <p style="color: #64748b;">Learn about the project, methodology, team, and technical stack.</p>
+        <p style="color: #64748b;">Learn about the project, methodology, and team.</p>
         <span class="badge badge-primary">Info</span>
     </div>
     """, unsafe_allow_html=True)
@@ -216,8 +269,7 @@ with col1:
             y=clf_df['Accuracy'],
             marker_color=['#1e3a5f', '#2c4e6e', '#4682b4', '#6c8ebf', '#94a3b8'],
             text=[f"{v:.1f}%" for v in clf_df['Accuracy']],
-            textposition='outside',
-            hovertemplate='%{x}<br>Accuracy: %{y:.1f}%<extra></extra>'
+            textposition='outside'
         )
     ])
     fig.update_layout(
@@ -247,8 +299,7 @@ with col2:
             y=reg_df['R²'],
             marker_color=['#1e3a5f', '#2c4e6e', '#4682b4', '#94a3b8'],
             text=[f"{v:.3f}" for v in reg_df['R²']],
-            textposition='outside',
-            hovertemplate='%{x}<br>R² Score: %{y:.3f}<extra></extra>'
+            textposition='outside'
         )
     ])
     fig.update_layout(
@@ -368,7 +419,7 @@ st.markdown("""
 <div class="footer">
     <p>🏋️ Body Performance Analytics and Intelligent Classification System</p>
     <p>Course: Introduction to AI and Machine Learning | Submission Date: March 26, 2026</p>
-    <p style="font-size: 0.7rem;">All predictions are for educational purposes only. This system should not replace professional medical advice.</p>
+    <p style="font-size: 0.7rem;">All predictions are for educational purposes only.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -377,7 +428,6 @@ st.markdown("""
 # ============================================
 with st.sidebar:
     # Logo in sidebar
-    logo_path = os.path.join('assets', 'logo.png')
     if os.path.exists(logo_path):
         st.image(logo_path, width=60)
     
