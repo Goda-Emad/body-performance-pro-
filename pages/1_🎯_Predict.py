@@ -14,42 +14,73 @@ import os
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.model_loader import load_models, get_model_info
-from utils.preprocessing import preprocess_input, preprocess_batch, get_class_description, decode_class
-from utils.prediction import predict_classification, predict_regression, compare_models_predictions
-from utils.visualizations import create_prediction_gauge
-from utils.report_generator import ReportGenerator, generate_summary
+from utils.model_loader import load_models
+from utils.prediction import predict_classification, predict_regression
+from utils.report_generator import generate_summary
 import io
 
-# إعدادات الصفحة
+# ============================================
+# PAGE CONFIGURATION
+# ============================================
 st.set_page_config(
     page_title="Predict | Body Performance Analytics",
     page_icon="🎯",
     layout="wide"
 )
 
-# تحميل CSS
+# ============================================
+# LOAD CUSTOM CSS
+# ============================================
 def load_css():
-    try:
-        with open(os.path.join('assets', 'style.css'), 'r') as f:
+    """Load custom CSS from assets folder"""
+    css_path = os.path.join('assets', 'style.css')
+    if os.path.exists(css_path):
+        with open(css_path, 'r', encoding='utf-8') as f:
             css = f.read()
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
-    except:
+    else:
+        # Fallback CSS if file not found
         st.markdown("""
         <style>
-        .main-header { background: linear-gradient(135deg, #1e3a5f 0%, #2c4e6e 100%); padding: 2rem; border-radius: 20px; margin-bottom: 2rem; }
-        .main-title { font-size: 2rem; font-weight: bold; color: white; text-align: center; }
-        .main-subtitle { color: rgba(255,255,255,0.9); text-align: center; }
-        .card { background: white; border-radius: 20px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 1rem; }
-        .card-title { font-size: 1.2rem; font-weight: bold; color: #1e3a5f; margin-bottom: 1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; }
-        .metric-value { font-size: 2rem; font-weight: bold; color: #1e3a5f; text-align: center; }
-        .metric-label { font-size: 0.8rem; color: #64748b; text-align: center; }
+        .main-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c4e6e 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+        .main-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+        }
+        .main-subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #1e3a5f;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
         </style>
         """, unsafe_allow_html=True)
 
 load_css()
 
-# العنوان
+# ============================================
+# HEADER
+# ============================================
 st.markdown("""
 <div class="main-header">
     <div class="main-title">🎯 Individual Performance Prediction</div>
@@ -57,9 +88,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# تحميل النماذج
+# ============================================
+# LOAD MODELS
+# ============================================
 @st.cache_resource
 def get_models():
+    """Load all trained models with caching"""
     try:
         models = load_models()
         return models
@@ -72,7 +106,9 @@ models = get_models()
 if models is None:
     st.stop()
 
-# تقسيم الصفحة
+# ============================================
+# INPUT FORM
+# ============================================
 col_input, col_results = st.columns([1, 1], gap="large")
 
 with col_input:
@@ -95,10 +131,10 @@ with col_input:
         flexibility = st.number_input("Sit and Bend Forward (cm)", min_value=-20, max_value=50, value=15, step=1)
         sit_ups = st.number_input("Sit-ups Count", min_value=0, max_value=100, value=40, step=1)
     
-    # تجميع البيانات
+    # Collect input data
     input_data = {
         'age': age,
-        'gender': gender,
+        'gender': 1 if gender == "Male" else 0,
         'height_cm': height,
         'weight_kg': weight,
         'body fat_%': body_fat,
@@ -109,39 +145,90 @@ with col_input:
         'sit-ups counts': sit_ups
     }
     
-    # عرض ملخص البيانات
+    # Data summary expander
     with st.expander("📋 Data Summary"):
         summary_df = pd.DataFrame([input_data]).T.reset_index()
         summary_df.columns = ['Feature', 'Value']
         st.dataframe(summary_df, use_container_width=True, hide_index=True)
     
-    # زر التنبؤ
     st.markdown("---")
     predict_btn = st.button("🚀 Predict Performance", use_container_width=True, type="primary")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
-# معالجة التنبؤ
+# ============================================
+# PREDICTION FUNCTION
+# ============================================
+def preprocess_input(input_data, scaler):
+    """Preprocess single input sample"""
+    feature_cols = [
+        'age', 'gender', 'height_cm', 'weight_kg', 'body fat_%',
+        'diastolic', 'systolic', 'gripForce', 'sit_and_bend_forward_cm', 'sit-ups counts'
+    ]
+    X = np.array([[input_data[col] for col in feature_cols]])
+    X_scaled = scaler.transform(X)
+    return X_scaled
+
+def get_class_description(class_label):
+    """Get description for performance class"""
+    descriptions = {
+        'A': {
+            'name': 'Excellent Performance',
+            'description': 'Top 25% of participants. Exceptional fitness level.',
+            'color': '#1e3a5f',
+            'icon': '🏆',
+            'recommendation': 'Maintain current training regimen.'
+        },
+        'B': {
+            'name': 'Good Performance',
+            'description': 'Above average fitness level. Strong performance.',
+            'color': '#10b981',
+            'icon': '💪',
+            'recommendation': 'Continue consistent training. Small improvements possible.'
+        },
+        'C': {
+            'name': 'Average Performance',
+            'description': 'Average fitness level. Room for improvement.',
+            'color': '#f59e0b',
+            'icon': '📊',
+            'recommendation': 'Focus on flexibility and endurance training.'
+        },
+        'D': {
+            'name': 'Needs Improvement',
+            'description': 'Below average fitness level. Significant improvement needed.',
+            'color': '#ef4444',
+            'icon': '⚠️',
+            'recommendation': 'Consider structured fitness program focusing on core areas.'
+        }
+    }
+    return descriptions.get(class_label, descriptions['D'])
+
+# ============================================
+# MAKE PREDICTION
+# ============================================
 if predict_btn:
     with st.spinner("🔄 Making predictions..."):
         try:
-            # Preprocess input
+            # Get scaler
             scaler = models['scaler']
+            
+            # Preprocess input
             X_scaled = preprocess_input(input_data, scaler)
             
             with col_results:
-                # ========== 1. Classification Results ==========
+                # ========== CLASSIFICATION RESULTS ==========
                 st.markdown('<div class="card">', unsafe_allow_html=True)
                 st.markdown('<div class="card-title">🏆 Classification Results</div>', unsafe_allow_html=True)
                 
-                # Best model (MLP)
+                # Best classifier (MLP)
                 mlp_model = models['mlp']
                 pred_class, proba = predict_classification(mlp_model, X_scaled, return_proba=True)
                 confidence = np.max(proba) if proba is not None else None
                 
-                # Class description
+                # Get class description
                 class_desc = get_class_description(pred_class[0])
                 
+                # Display class result
                 col_a, col_b, col_c = st.columns(3)
                 with col_a:
                     st.markdown(f"""
@@ -155,7 +242,7 @@ if predict_btn:
                 with col_b:
                     st.markdown(f"""
                     <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
-                        <div style="font-size: 2rem;">{class_desc['name']}</div>
+                        <div style="font-size: 1.2rem; font-weight: bold;">{class_desc['name']}</div>
                         <div style="font-size: 0.8rem; color: #64748b;">Performance Level</div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -164,12 +251,12 @@ if predict_btn:
                     if confidence:
                         st.markdown(f"""
                         <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
-                            <div style="font-size: 2rem;">{confidence:.1%}</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #1e3a5f;">{confidence:.1%}</div>
                             <div style="font-size: 0.8rem; color: #64748b;">Confidence</div>
                         </div>
                         """, unsafe_allow_html=True)
                 
-                # Probability distribution
+                # Probability distribution chart
                 if proba is not None:
                     st.markdown("---")
                     st.markdown("**Probability Distribution**")
@@ -198,7 +285,7 @@ if predict_btn:
                 st.markdown(f"**Recommendation:** {class_desc['recommendation']}")
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # ========== 2. Regression Results ==========
+                # ========== REGRESSION RESULTS ==========
                 st.markdown('<div class="card">', unsafe_allow_html=True)
                 st.markdown('<div class="card-title">📈 Regression Results</div>', unsafe_allow_html=True)
                 
@@ -206,7 +293,8 @@ if predict_btn:
                 mlp_reg = models['mlp_regressor']
                 pred_value = predict_regression(mlp_reg, X_scaled)
                 
-                col1, col2, col3 = st.columns(3)
+                # Display regression result
+                col1, col2 = st.columns(2)
                 with col1:
                     st.markdown(f"""
                     <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
@@ -221,7 +309,7 @@ if predict_btn:
                 with col2:
                     st.metric("Average (Dataset)", f"{avg_jump:.1f} cm", delta=f"{diff:+.1f} cm")
                 
-                # Prediction interpretation
+                # Interpretation based on prediction
                 if pred_value[0] > 220:
                     interpretation = "🚀 Excellent explosive power! Elite level performance."
                 elif pred_value[0] > 190:
@@ -238,7 +326,9 @@ if predict_btn:
             st.error(f"❌ Error making predictions: {e}")
             st.info("Please check your input data and try again.")
 
-# Sidebar with info
+# ============================================
+# SIDEBAR
+# ============================================
 with st.sidebar:
     st.markdown("### ℹ️ About")
     st.markdown("""
