@@ -86,7 +86,7 @@ with col_left:
         help="Upload a file with the required columns. You can download a sample template below."
     )
     
-    # تحميل نموذج
+    # تحميل نموذج - ✅ FIXED: use correct column name with spaces
     sample_df = pd.DataFrame({
         'age': [25, 30, 35],
         'gender': ['M', 'F', 'M'],
@@ -96,7 +96,7 @@ with col_left:
         'diastolic': [80, 75, 85],
         'systolic': [120, 115, 130],
         'gripForce': [45, 35, 50],
-        'sit_and_bend_forward_cm': [15, 20, 10],
+        'sit and bend forward_cm': [15, 20, 10],  # ✅ FIXED: spaces, not underscore
         'sit-ups counts': [45, 40, 35],
         'broad jump_cm': [200, 180, 190],
         'class': ['B', 'C', 'B']
@@ -365,7 +365,7 @@ with st.sidebar:
     **Features (10):**
     - `age`, `gender`, `height_cm`, `weight_kg`, `body fat_%`
     - `diastolic`, `systolic`, `gripForce`
-    - `sit_and_bend_forward_cm`, `sit-ups counts`
+    - `sit and bend forward_cm`, `sit-ups counts`
     
     **Optional:**
     - `broad jump_cm` (for comparison)
