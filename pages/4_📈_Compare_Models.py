@@ -13,30 +13,42 @@ from plotly.subplots import make_subplots
 from utils.model_loader import get_model_info
 from utils.visualizations import create_comparison_chart, create_model_comparison_dashboard
 import time
+import os
 
-# إعدادات الصفحة
+# ============================================
+# PAGE CONFIGURATION - يجب أن يكون أول أمر
+# ============================================
 st.set_page_config(
     page_title="Compare Models | Body Performance Analytics",
     page_icon="📈",
     layout="wide"
 )
 
-# تحميل CSS
-def load_css():
+# ============================================
+# LOGO IN SIDEBAR
+# ============================================
+logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'logo.png')
+if os.path.exists(logo_path):
+    st.sidebar.image(logo_path, width=150)
+st.sidebar.markdown("---")
+
+# ============================================
+# LOAD CUSTOM CSS
+# ============================================
+css_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'style.css')
+if os.path.exists(css_path):
     try:
-        with open('assets/style.css', 'r') as f:
+        with open(css_path, 'r', encoding='utf-8') as f:
             css = f.read()
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
-    except:
-        pass
-
-load_css()
+    except Exception as e:
+        st.write(f"⚠️ Could not load CSS: {e}")
 
 # العنوان
 st.markdown("""
 <div class="main-header">
-    <div class="main-title">📈 Model Performance Comparison</div>
-    <div class="main-subtitle">Compare all trained models side by side</div>
+    <h1>📈 Model Performance Comparison</h1>
+    <p>Compare all trained models side by side</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -123,7 +135,6 @@ with tab1:
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Select metrics to display
         metrics = st.multiselect(
             "Select metrics to display",
             ['Accuracy', 'Precision', 'Recall', 'F1 Score'],
@@ -137,12 +148,10 @@ with tab1:
             horizontal=True
         )
     
-    # Display comparison table
     st.markdown("#### 📋 Performance Table")
     clf_df = pd.DataFrame(CLASSIFICATION_RESULTS).T
-    st.dataframe(clf_df.style.format("{:.2%}" if 'Accuracy' in clf_df.columns else "{:.4f}"), use_container_width=True)
+    st.dataframe(clf_df.style.format("{:.2%}"), use_container_width=True)
     
-    # Visualizations
     st.markdown("#### 📊 Visual Comparison")
     
     if chart_type == "Bar Chart":
@@ -150,9 +159,7 @@ with tab1:
             fig = create_comparison_chart(CLASSIFICATION_RESULTS, metric, f"{metric} Comparison")
             st.plotly_chart(fig, use_container_width=True)
     else:
-        # Radar chart for all metrics
         categories = ['Accuracy', 'Precision', 'Recall', 'F1 Score']
-        
         fig = go.Figure()
         for model in CLASSIFICATION_RESULTS.keys():
             values = [CLASSIFICATION_RESULTS[model][m] for m in categories]
@@ -163,31 +170,25 @@ with tab1:
                 name=model,
                 line=dict(width=2)
             ))
-        
         fig.update_layout(
-            polar=dict(
-                radialaxis=dict(
-                    visible=True,
-                    range=[0, 1],
-                    tickformat='.0%'
-                )),
+            polar=dict(radialaxis=dict(visible=True, range=[0, 1], tickformat='.0%')),
             title="Radar Chart - All Classification Models",
             height=600,
             showlegend=True
         )
         st.plotly_chart(fig, use_container_width=True)
     
-    # Best model highlight
     best_model = max(CLASSIFICATION_RESULTS.keys(), key=lambda x: CLASSIFICATION_RESULTS[x]['Accuracy'])
     best_acc = CLASSIFICATION_RESULTS[best_model]['Accuracy']
     
     st.markdown("---")
     st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2c4e6e 100%); padding: 1.5rem; border-radius: 15px; color: white;">
-        <h3 style="margin: 0;">🏆 Best Classification Model</h3>
-        <p style="font-size: 1.2rem; margin: 0.5rem 0;"><strong>{best_model}</strong></p>
-        <p style="margin: 0;">Accuracy: <strong>{best_acc:.1%}</strong> | F1 Score: <strong>{CLASSIFICATION_RESULTS[best_model]['F1 Score']:.1%}</strong></p>
-        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">This model outperforms others by capturing non-linear relationships in the data.</p>
+    <div class="main-card" style="text-align: center; background: linear-gradient(135deg, rgba(0,163,196,0.2) 0%, rgba(14,17,23,0) 100%);">
+        <div style="font-size: 2rem; margin-bottom: 10px;">🏆</div>
+        <h3 style="color: var(--st-color-primary); margin-bottom: 10px;">Best Classification Model</h3>
+        <p style="font-size: 1.2rem; font-weight: bold; color: var(--st-color-text);">{best_model}</p>
+        <p>Accuracy: <strong>{best_acc:.1%}</strong> | F1 Score: <strong>{CLASSIFICATION_RESULTS[best_model]['F1 Score']:.1%}</strong></p>
+        <p style="font-size: 0.9rem; margin-top: 10px;">This model outperforms others by capturing non-linear relationships in the data.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -211,7 +212,7 @@ with tab2:
             go.Bar(
                 x=list(REGRESSION_RESULTS.keys()),
                 y=[v['RMSE'] for v in REGRESSION_RESULTS.values()],
-                marker_color=['#94a3b8', '#94a3b8', '#94a3b8', '#1e3a5f'],
+                marker_color=['#94a3b8', '#94a3b8', '#94a3b8', '#00A3C4'],
                 text=[f"{v['RMSE']:.1f}" for v in REGRESSION_RESULTS.values()],
                 textposition='outside'
             )
@@ -223,13 +224,12 @@ with tab2:
         )
         st.plotly_chart(fig, use_container_width=True)
     
-    # R² Comparison
     st.markdown("#### 📊 R² Score Comparison (Higher is Better)")
     fig = go.Figure(data=[
         go.Bar(
             x=list(REGRESSION_RESULTS.keys()),
             y=[v['R²'] for v in REGRESSION_RESULTS.values()],
-            marker_color=['#94a3b8', '#94a3b8', '#94a3b8', '#1e3a5f'],
+            marker_color=['#94a3b8', '#94a3b8', '#94a3b8', '#00A3C4'],
             text=[f"{v['R²']:.3f}" for v in REGRESSION_RESULTS.values()],
             textposition='outside'
         )
@@ -242,17 +242,17 @@ with tab2:
     )
     st.plotly_chart(fig, use_container_width=True)
     
-    # Best model
     best_reg = max(REGRESSION_RESULTS.keys(), key=lambda x: REGRESSION_RESULTS[x]['R²'])
     best_r2 = REGRESSION_RESULTS[best_reg]['R²']
     
     st.markdown("---")
     st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #1e3a5f 0%, #2c4e6e 100%); padding: 1.5rem; border-radius: 15px; color: white;">
-        <h3 style="margin: 0;">🏆 Best Regression Model</h3>
-        <p style="font-size: 1.2rem; margin: 0.5rem 0;"><strong>{best_reg}</strong></p>
-        <p style="margin: 0;">R² Score: <strong>{best_r2:.3f}</strong> | RMSE: <strong>{REGRESSION_RESULTS[best_reg]['RMSE']:.1f} cm</strong></p>
-        <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">This model explains {best_r2:.1%} of variance in broad jump distance.</p>
+    <div class="main-card" style="text-align: center; background: linear-gradient(135deg, rgba(0,163,196,0.2) 0%, rgba(14,17,23,0) 100%);">
+        <div style="font-size: 2rem; margin-bottom: 10px;">🏆</div>
+        <h3 style="color: var(--st-color-primary); margin-bottom: 10px;">Best Regression Model</h3>
+        <p style="font-size: 1.2rem; font-weight: bold; color: var(--st-color-text);">{best_reg}</p>
+        <p>R² Score: <strong>{best_r2:.3f}</strong> | RMSE: <strong>{REGRESSION_RESULTS[best_reg]['RMSE']:.1f} cm</strong></p>
+        <p style="font-size: 0.9rem; margin-top: 10px;">This model explains {best_r2:.1%} of variance in broad jump distance.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -266,7 +266,6 @@ with tab3:
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Bar chart with error bars
         models_cv = list(CV_RESULTS.keys())
         means = [CV_RESULTS[m]['mean'] for m in models_cv]
         stds = [CV_RESULTS[m]['std'] for m in models_cv]
@@ -276,7 +275,7 @@ with tab3:
             x=models_cv,
             y=means,
             error_y=dict(type='data', array=stds, visible=True),
-            marker_color=['#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#1e3a5f'],
+            marker_color=['#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#00A3C4'],
             text=[f"{m:.1%}" for m in means],
             textposition='outside'
         ))
@@ -291,7 +290,6 @@ with tab3:
         st.plotly_chart(fig, use_container_width=True)
     
     with col2:
-        st.markdown("#### 📋 CV Summary")
         cv_df = pd.DataFrame([
             {'Model': m, 'Mean Accuracy': f"{CV_RESULTS[m]['mean']:.1%}", 
              'Std Dev': f"±{CV_RESULTS[m]['std']:.1%}"}
@@ -299,7 +297,6 @@ with tab3:
         ])
         st.dataframe(cv_df, use_container_width=True, hide_index=True)
     
-    # Stability interpretation
     st.markdown("---")
     st.markdown("### 📝 Stability Analysis")
     
@@ -313,21 +310,17 @@ with tab3:
     - **Interpretation**: Models with low standard deviation are more reliable for production deployment
     """)
     
-    # Box plot style visualization
     st.markdown("#### 📊 Accuracy Distribution")
     fig = go.Figure()
-    
     for model in models_cv:
-        # Simulate distribution for visualization
         np.random.seed(42)
         simulated = np.random.normal(CV_RESULTS[model]['mean'], CV_RESULTS[model]['std'], 100)
         fig.add_trace(go.Box(
             y=simulated,
             name=model,
             boxmean='sd',
-            marker_color='#1e3a5f' if model == best_cv else '#94a3b8'
+            marker_color='#00A3C4' if model == best_cv else '#94a3b8'
         ))
-    
     fig.update_layout(
         title="Cross Validation Accuracy Distribution",
         yaxis_title="Accuracy",
@@ -343,7 +336,6 @@ with tab3:
 with tab4:
     st.markdown("### 🏆 Performance Summary")
     
-    # Best models summary
     best_clf = max(CLASSIFICATION_RESULTS.keys(), key=lambda x: CLASSIFICATION_RESULTS[x]['Accuracy'])
     best_reg = max(REGRESSION_RESULTS.keys(), key=lambda x: REGRESSION_RESULTS[x]['R²'])
     best_cv_model = max(CV_RESULTS.keys(), key=lambda x: CV_RESULTS[x]['mean'])
@@ -351,39 +343,38 @@ with tab4:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("""
-        <div style="background: #f8fafc; padding: 1rem; border-radius: 15px; text-align: center;">
-            <h3>🏆 Classification</h3>
-            <p style="font-size: 1.2rem; font-weight: bold;">{}</p>
-            <p>Accuracy: <b>{:.1%}</b></p>
-            <p>F1 Score: <b>{:.1%}</b></p>
+        st.markdown(f"""
+        <div class="main-card" style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">🏆</div>
+            <h3 style="color: var(--st-color-primary);">Classification</h3>
+            <p style="font-size: 1.2rem; font-weight: bold; color: var(--st-color-text);">{best_clf}</p>
+            <p>Accuracy: <b>{CLASSIFICATION_RESULTS[best_clf]['Accuracy']:.1%}</b></p>
+            <p>F1 Score: <b>{CLASSIFICATION_RESULTS[best_clf]['F1 Score']:.1%}</b></p>
         </div>
-        """.format(best_clf, CLASSIFICATION_RESULTS[best_clf]['Accuracy'], 
-                   CLASSIFICATION_RESULTS[best_clf]['F1 Score']), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown("""
-        <div style="background: #f8fafc; padding: 1rem; border-radius: 15px; text-align: center;">
-            <h3>📈 Regression</h3>
-            <p style="font-size: 1.2rem; font-weight: bold;">{}</p>
-            <p>R² Score: <b>{:.3f}</b></p>
-            <p>RMSE: <b>{:.1f} cm</b></p>
+        st.markdown(f"""
+        <div class="main-card" style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">📈</div>
+            <h3 style="color: var(--st-color-primary);">Regression</h3>
+            <p style="font-size: 1.2rem; font-weight: bold; color: var(--st-color-text);">{best_reg}</p>
+            <p>R² Score: <b>{REGRESSION_RESULTS[best_reg]['R²']:.3f}</b></p>
+            <p>RMSE: <b>{REGRESSION_RESULTS[best_reg]['RMSE']:.1f} cm</b></p>
         </div>
-        """.format(best_reg, REGRESSION_RESULTS[best_reg]['R²'], 
-                   REGRESSION_RESULTS[best_reg]['RMSE']), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
     with col3:
-        st.markdown("""
-        <div style="background: #f8fafc; padding: 1rem; border-radius: 15px; text-align: center;">
-            <h3>🔄 Cross Validation</h3>
-            <p style="font-size: 1.2rem; font-weight: bold;">{}</p>
-            <p>Mean Acc: <b>{:.1%}</b></p>
-            <p>Std Dev: <b>±{:.1%}</b></p>
+        st.markdown(f"""
+        <div class="main-card" style="text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">🔄</div>
+            <h3 style="color: var(--st-color-primary);">Cross Validation</h3>
+            <p style="font-size: 1.2rem; font-weight: bold; color: var(--st-color-text);">{best_cv_model}</p>
+            <p>Mean Acc: <b>{CV_RESULTS[best_cv_model]['mean']:.1%}</b></p>
+            <p>Std Dev: <b>±{CV_RESULTS[best_cv_model]['std']:.1%}</b></p>
         </div>
-        """.format(best_cv_model, CV_RESULTS[best_cv_model]['mean'], 
-                   CV_RESULTS[best_cv_model]['std']), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
     
-    # Key insights
     st.markdown("---")
     st.markdown("### 📊 Key Insights")
     
@@ -399,7 +390,6 @@ with tab4:
     for insight in insights:
         st.markdown(f"- {insight}")
     
-    # Recommendation
     st.markdown("---")
     st.markdown("### 💡 Recommendation")
     st.markdown("""
@@ -411,7 +401,6 @@ with tab4:
     4. **Key Features**: Focus on flexibility and body fat measurements as they are the strongest predictors
     """)
     
-    # Model comparison dashboard
     st.markdown("---")
     st.markdown("### 📊 Complete Dashboard")
     
