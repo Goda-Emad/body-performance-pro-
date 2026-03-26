@@ -9,7 +9,7 @@ import numpy as np
 from typing import Tuple, Optional, Dict, Any
 import os
 
-# إعدادات التحقق من صحة البيانات
+# إعدادات التحقق من صحة البيانات - ✅ FIXED: use correct column name with spaces
 VALIDATION_RULES = {
     'age': {'min': 18, 'max': 100, 'dtype': 'int', 'name': 'Age (years)'},
     'gender': {'values': ['M', 'F', 'Male', 'Female'], 'dtype': 'category', 'name': 'Gender'},
@@ -19,15 +19,16 @@ VALIDATION_RULES = {
     'diastolic': {'min': 60, 'max': 120, 'dtype': 'float', 'name': 'Diastolic BP (mmHg)'},
     'systolic': {'min': 90, 'max': 200, 'dtype': 'float', 'name': 'Systolic BP (mmHg)'},
     'gripForce': {'min': 10, 'max': 100, 'dtype': 'float', 'name': 'Grip Force (kg)'},
-    'sit_and_bend_forward_cm': {'min': -20, 'max': 50, 'dtype': 'float', 'name': 'Flexibility (cm)'},
+    'sit and bend forward_cm': {'min': -20, 'max': 50, 'dtype': 'float', 'name': 'Flexibility (cm)'},  # ✅ FIXED
     'sit-ups counts': {'min': 0, 'max': 100, 'dtype': 'int', 'name': 'Sit-ups Count'},
     'broad jump_cm': {'min': 50, 'max': 350, 'dtype': 'float', 'name': 'Broad Jump (cm)'},
     'class': {'values': ['A', 'B', 'C', 'D'], 'dtype': 'category', 'name': 'Performance Class'}
 }
 
+# ✅ FIXED: feature columns with spaces (matches dataset)
 FEATURE_COLUMNS = [
     'age', 'gender', 'height_cm', 'weight_kg', 'body fat_%',
-    'diastolic', 'systolic', 'gripForce', 'sit_and_bend_forward_cm', 'sit-ups counts'
+    'diastolic', 'systolic', 'gripForce', 'sit and bend forward_cm', 'sit-ups counts'
 ]
 
 TARGET_COLUMNS = ['class', 'broad jump_cm']
@@ -39,18 +40,6 @@ def load_data(
 ) -> pd.DataFrame:
     """
     Load dataset from CSV file.
-    
-    Parameters:
-    -----------
-    file_path : str
-        Path to the CSV file
-    sample_size : int, optional
-        Number of rows to load (for testing)
-    
-    Returns:
-    --------
-    pd.DataFrame
-        Loaded dataset
     """
     try:
         if not os.path.exists(file_path):
@@ -70,16 +59,6 @@ def load_data(
 def validate_data(df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
     """
     Validate dataset against predefined rules.
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Dataframe to validate
-    
-    Returns:
-    --------
-    Tuple[bool, Dict]
-        (is_valid, validation_report)
     """
     errors = []
     warnings = []
@@ -148,21 +127,13 @@ def validate_data(df: pd.DataFrame) -> Tuple[bool, Dict[str, Any]]:
 def preprocess_raw_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Apply preprocessing to raw data (same as in training).
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Raw dataframe
-    
-    Returns:
-    --------
-    pd.DataFrame
-        Preprocessed dataframe
     """
     df_clean = df.copy()
     
-    # Cap outliers (same as in training)
-    df_clean['sit_and_bend_forward_cm'] = df_clean['sit_and_bend_forward_cm'].clip(upper=42)
+    # Cap outliers (same as in training) - ✅ FIXED: use correct column name
+    if 'sit and bend forward_cm' in df_clean.columns:
+        df_clean['sit and bend forward_cm'] = df_clean['sit and bend forward_cm'].clip(upper=42)
+    
     df_clean['diastolic'] = df_clean['diastolic'].replace(0, 70)
     df_clean['broad jump_cm'] = df_clean['broad jump_cm'].replace(0, df_clean['broad jump_cm'].median())
     
@@ -189,16 +160,6 @@ def get_target_columns() -> list:
 def get_dataset_info(df: pd.DataFrame) -> Dict[str, Any]:
     """
     Get summary information about the dataset.
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Dataframe
-    
-    Returns:
-    --------
-    Dict
-        Dataset information
     """
     return {
         'shape': df.shape,
