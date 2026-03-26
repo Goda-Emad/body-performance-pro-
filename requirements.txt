@@ -1,6 +1,6 @@
 # Core
 streamlit==1.31.0
-pandas==2.1.0
+pandas==2.2.2
 numpy==1.26.4
 
 # Machine Learning
