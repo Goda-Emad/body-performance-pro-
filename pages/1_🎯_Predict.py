@@ -8,10 +8,16 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import sys
+import os
+
+# Add project root to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from utils.model_loader import load_models, get_model_info
-from utils.preprocessing import preprocess_single_input, get_class_description, decode_class
+from utils.preprocessing import preprocess_input, preprocess_batch, get_class_description, decode_class
 from utils.prediction import predict_classification, predict_regression, compare_models_predictions
-from utils.visualizations import create_prediction_gauge, create_comparison_chart
+from utils.visualizations import create_prediction_gauge
 from utils.report_generator import ReportGenerator, generate_summary
 import io
 
@@ -25,7 +31,7 @@ st.set_page_config(
 # تحميل CSS
 def load_css():
     try:
-        with open('assets/style.css', 'r') as f:
+        with open(os.path.join('assets', 'style.css'), 'r') as f:
             css = f.read()
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
     except:
@@ -59,6 +65,7 @@ def get_models():
         return models
     except Exception as e:
         st.error(f"❌ Error loading models: {e}")
+        st.info("Please ensure model files are in the 'models/' folder")
         return None
 
 models = get_models()
@@ -120,25 +127,12 @@ if predict_btn:
         try:
             # Preprocess input
             scaler = models['scaler']
-            X_scaled, warnings = preprocess_single_input(input_data, scaler)
-            
-            if warnings:
-                for w in warnings:
-                    st.warning(f"⚠️ {w}")
+            X_scaled = preprocess_input(input_data, scaler)
             
             with col_results:
                 # ========== 1. Classification Results ==========
                 st.markdown('<div class="card">', unsafe_allow_html=True)
                 st.markdown('<div class="card-title">🏆 Classification Results</div>', unsafe_allow_html=True)
-                
-                # Get predictions from all classification models
-                clf_models = {
-                    'KNN': models['knn'],
-                    'Decision Tree': models['dt'],
-                    'SVM-Linear': models['svm_linear'],
-                    'SVM-RBF': models['svm_rbf'],
-                    'Neural Network (MLP)': models['mlp']
-                }
                 
                 # Best model (MLP)
                 mlp_model = models['mlp']
@@ -175,12 +169,6 @@ if predict_btn:
                         </div>
                         """, unsafe_allow_html=True)
                 
-                # Confidence gauge
-                if confidence:
-                    st.markdown("---")
-                    gauge_fig = create_prediction_gauge(confidence, title="Prediction Confidence")
-                    st.plotly_chart(gauge_fig, use_container_width=True)
-                
                 # Probability distribution
                 if proba is not None:
                     st.markdown("---")
@@ -214,14 +202,6 @@ if predict_btn:
                 st.markdown('<div class="card">', unsafe_allow_html=True)
                 st.markdown('<div class="card-title">📈 Regression Results</div>', unsafe_allow_html=True)
                 
-                # Get regression predictions
-                reg_models = {
-                    'Linear Regression': models['linear_regression'],
-                    'Decision Tree Regressor': models['dt_regressor'],
-                    'SVR': models['svr'],
-                    'MLP Regressor': models['mlp_regressor']
-                }
-                
                 # Best regressor (MLP Regressor)
                 mlp_reg = models['mlp_regressor']
                 pred_value = predict_regression(mlp_reg, X_scaled)
@@ -252,81 +232,6 @@ if predict_btn:
                     interpretation = "📉 Below average explosive power. Consider targeted strength training."
                 
                 st.markdown(f"**Interpretation:** {interpretation}")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # ========== 3. All Models Comparison ==========
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="card-title">🤖 All Models Comparison</div>', unsafe_allow_html=True)
-                
-                # Compare all models
-                comparison_df = compare_models_predictions(models, X_scaled, model_type='classification')
-                st.dataframe(comparison_df, use_container_width=True, hide_index=True)
-                
-                st.caption("Different models may give different predictions. The Neural Network (MLP) is the best performing model with 72.15% accuracy.")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # ========== 4. Download Report ==========
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="card-title">📄 Download Report</div>', unsafe_allow_html=True)
-                
-                # Prepare prediction results for report
-                prediction_results = {
-                    'classification': {
-                        'predicted_class': pred_class[0],
-                        'confidence': confidence,
-                        'probabilities': proba[0] if proba is not None else None
-                    },
-                    'regression': {
-                        'predicted_value': pred_value[0]
-                    }
-                }
-                
-                # Generate summary
-                summary = generate_summary(input_data, prediction_results)
-                
-                st.markdown("**Summary**")
-                for finding in summary['key_findings']:
-                    st.markdown(f"- {finding}")
-                
-                # Generate PDF report
-                if st.button("📥 Download PDF Report", use_container_width=True):
-                    with st.spinner("Generating PDF..."):
-                        try:
-                            report_gen = ReportGenerator()
-                            
-                            # Model results for comparison
-                            model_results = {
-                                'classification': {
-                                    'KNN': {'Accuracy': 0.6316, 'F1': 0.6352},
-                                    'Decision Tree': {'Accuracy': 0.6745, 'F1': 0.6746},
-                                    'SVM-RBF': {'Accuracy': 0.6887, 'F1': 0.6904},
-                                    'MLP': {'Accuracy': 0.7215, 'F1': 0.7231}
-                                },
-                                'regression': {
-                                    'Linear': {'R²': 0.7658, 'RMSE': 19.28},
-                                    'Decision Tree': {'R²': 0.7221, 'RMSE': 21.00},
-                                    'SVR': {'R²': 0.7749, 'RMSE': 18.90},
-                                    'MLP': {'R²': 0.7791, 'RMSE': 18.73}
-                                }
-                            }
-                            
-                            pdf_buffer = report_gen.generate_report(
-                                input_data=input_data,
-                                predictions=prediction_results,
-                                model_results=model_results,
-                                include_charts=True
-                            )
-                            
-                            st.download_button(
-                                label="📥 Download",
-                                data=pdf_buffer,
-                                file_name="body_performance_report.pdf",
-                                mime="application/pdf",
-                                use_container_width=True
-                            )
-                        except Exception as e:
-                            st.error(f"Error generating PDF: {e}")
-                
                 st.markdown('</div>', unsafe_allow_html=True)
                 
         except Exception as e:
