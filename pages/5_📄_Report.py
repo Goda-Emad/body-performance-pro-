@@ -1,7 +1,7 @@
 """
-Page: Generate Report
----------------------
-Generate comprehensive PDF reports with analysis and predictions.
+Page: Generate Report - Simplified Version
+-------------------------------------------
+Generate summary reports without PDF (uses CSV/Excel download instead).
 """
 
 import streamlit as st
@@ -12,9 +12,6 @@ import plotly.express as px
 from datetime import datetime
 import base64
 import io
-from utils.report_generator import ReportGenerator, generate_summary
-from utils.model_loader import get_model_info
-from utils.visualizations import create_comparison_chart, create_model_comparison_dashboard
 import time
 
 # إعدادات الصفحة
@@ -39,7 +36,7 @@ load_css()
 st.markdown("""
 <div class="main-header">
     <div class="main-title">📄 Generate Report</div>
-    <div class="main-subtitle">Create comprehensive PDF reports with analysis, predictions, and recommendations</div>
+    <div class="main-subtitle">Create comprehensive reports with analysis and predictions</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -168,7 +165,7 @@ with col1:
     st.markdown("---")
     
     # Generate button
-    generate_btn = st.button("📄 Generate Report", type="primary", use_container_width=True)
+    generate_btn = st.button("📊 Generate Report", type="primary", use_container_width=True)
 
 with col2:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -224,100 +221,94 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # Generate Report
 if generate_btn:
-    with st.spinner("🔄 Generating report... This may take a few moments"):
+    with st.spinner("🔄 Generating report..."):
         try:
-            report_gen = ReportGenerator(title="Body Performance Analytics Report")
+            # Create results dataframe
+            results_data = []
             
-            if report_type == "Single Prediction Report":
-                # Prepare model results
-                model_results = {
-                    'classification': CLASSIFICATION_RESULTS,
-                    'regression': REGRESSION_RESULTS
+            if report_type == "Full Analysis Report" or report_type == "Single Prediction Report":
+                # Add classification results
+                for model, metrics in CLASSIFICATION_RESULTS.items():
+                    row = {
+                        'Model': model,
+                        'Type': 'Classification',
+                        'Accuracy': f"{metrics['Accuracy']:.1%}",
+                        'Precision': f"{metrics['Precision']:.1%}",
+                        'Recall': f"{metrics['Recall']:.1%}",
+                        'F1 Score': f"{metrics['F1 Score']:.1%}",
+                        'RMSE': '-',
+                        'R²': '-'
+                    }
+                    results_data.append(row)
+                
+                # Add regression results
+                for model, metrics in REGRESSION_RESULTS.items():
+                    row = {
+                        'Model': model,
+                        'Type': 'Regression',
+                        'Accuracy': '-',
+                        'Precision': '-',
+                        'Recall': '-',
+                        'F1 Score': '-',
+                        'RMSE': f"{metrics['RMSE']:.1f}",
+                        'R²': f"{metrics['R²']:.3f}"
+                    }
+                    results_data.append(row)
+                
+                results_df = pd.DataFrame(results_data)
+                
+                # Create summary dataframe
+                summary_data = {
+                    'Metric': ['Best Classifier', 'Best Regressor', 'Key Predictor', 'CV Stability'],
+                    'Value': [
+                        f"MLP Neural Network ({CLASSIFICATION_RESULTS['Neural Network (MLP)']['Accuracy']:.1%})",
+                        f"MLP Regressor (R² = {REGRESSION_RESULTS['MLP Regressor']['R²']:.3f})",
+                        "Flexibility (r = +0.59)",
+                        "MLP: 72.98% ± 1.39%"
+                    ]
                 }
+                summary_df = pd.DataFrame(summary_data)
                 
-                pdf_buffer = report_gen.generate_report(
-                    input_data=input_data,
-                    predictions=predictions,
-                    model_results=model_results,
-                    include_charts=include_charts
-                )
+            elif report_type == "Single Prediction Report" and 'input_data' in locals():
+                # Single prediction report
+                results_df = pd.DataFrame([input_data]).T
+                results_df.columns = ['Value']
+                results_df.index.name = 'Feature'
+                results_df = results_df.reset_index()
                 
-            elif report_type == "Batch Summary Report" and 'batch_df' in locals():
-                # Generate batch summary
-                summary = {
-                    'total_records': len(batch_df),
-                    'columns': list(batch_df.columns),
-                    'class_distribution': batch_df['predicted_class'].value_counts().to_dict() if 'predicted_class' in batch_df.columns else {},
-                    'avg_jump': batch_df['predicted_broad_jump_cm'].mean() if 'predicted_broad_jump_cm' in batch_df.columns else None
-                }
+                summary_df = pd.DataFrame({
+                    'Metric': ['Predicted Class', 'Predicted Broad Jump'],
+                    'Value': [pred_class, f"{pred_jump:.1f} cm"]
+                })
                 
-                # Create a simple report
-                pdf_buffer = io.BytesIO()
-                from reportlab.lib.pagesizes import letter
-                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-                from reportlab.lib.styles import getSampleStyleSheet
-                
-                doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
-                story = []
-                styles = getSampleStyleSheet()
-                
-                story.append(Paragraph("Batch Prediction Report", styles['Title']))
-                story.append(Spacer(1, 12))
-                story.append(Paragraph(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
-                story.append(Spacer(1, 12))
-                story.append(Paragraph(f"Total Records: {summary['total_records']}", styles['Normal']))
-                story.append(Spacer(1, 12))
-                
-                if summary['class_distribution']:
-                    story.append(Paragraph("Class Distribution:", styles['Heading2']))
-                    for cls, count in summary['class_distribution'].items():
-                        story.append(Paragraph(f"{cls}: {count}", styles['Normal']))
-                
-                doc.build(story)
-                pdf_buffer.seek(0)
-                
-            else:  # Full Analysis Report
-                # Prepare sample input
-                sample_input = {
-                    'age': 25,
-                    'gender': 'Male',
-                    'height_cm': 170,
-                    'weight_kg': 70,
-                    'body fat_%': 20,
-                    'diastolic': 80,
-                    'systolic': 120,
-                    'gripForce': 40,
-                    'sit_and_bend_forward_cm': 15,
-                    'sit-ups counts': 40
-                }
-                
-                sample_predictions = {
-                    'classification': {'predicted_class': 'B', 'confidence': 0.72},
-                    'regression': {'predicted_value': 190.5}
-                }
-                
-                model_results = {
-                    'classification': CLASSIFICATION_RESULTS,
-                    'regression': REGRESSION_RESULTS
-                }
-                
-                pdf_buffer = report_gen.generate_report(
-                    input_data=sample_input,
-                    predictions=sample_predictions,
-                    model_results=model_results,
-                    include_charts=include_charts
-                )
+            else:
+                results_df = pd.DataFrame({'Message': ['No data available']})
+                summary_df = pd.DataFrame({'Message': ['Upload a file to generate report']})
             
-            # Download button
+            # CSV download
+            csv_output = results_df.to_csv(index=False)
+            b64_csv = base64.b64encode(csv_output.encode()).decode()
+            
+            # Summary CSV
+            summary_csv = summary_df.to_csv(index=False)
+            b64_summary = base64.b64encode(summary_csv.encode()).decode()
+            
             st.success("✅ Report generated successfully!")
             
-            st.download_button(
-                label="📥 Download PDF Report",
-                data=pdf_buffer,
-                file_name=f"body_performance_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown(f'<a href="data:file/csv;base64,{b64_csv}" download="performance_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv" style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">📥 Download Full Report (CSV)</a>', unsafe_allow_html=True)
+            
+            with col_b:
+                st.markdown(f'<a href="data:file/csv;base64,{b64_summary}" download="summary_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv" style="display: inline-block; padding: 0.5rem 1rem; background-color: #2c4e6e; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">📥 Download Summary (CSV)</a>', unsafe_allow_html=True)
+            
+            # Display preview
+            st.markdown("---")
+            st.markdown("### 📊 Report Preview")
+            st.dataframe(results_df.head(20), use_container_width=True)
+            
+            if len(results_df) > 20:
+                st.caption(f"Showing first 20 of {len(results_df)} rows")
             
         except Exception as e:
             st.error(f"❌ Error generating report: {e}")
@@ -348,20 +339,18 @@ with st.sidebar:
     ---
     ### 📋 What's Included
     
-    - **Model Performance Tables**
-    - **Comparison Charts**
-    - **Cross Validation Results**
+    - **Model Performance Tables** (CSV)
+    - **Summary Statistics** (CSV)
     - **Key Insights**
     - **Recommendations**
-    - **Professional Formatting**
     
     ---
     ### 💡 Tips
     
-    - Full report takes 10-15 seconds
-    - Single report is fastest
+    - Download reports as CSV files
+    - Full report includes all models
+    - Single report includes participant data
     - Batch report requires CSV upload
-    - All reports include professional formatting
     """)
     
     st.markdown("---")
