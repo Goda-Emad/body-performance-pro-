@@ -10,10 +10,10 @@ from typing import Dict, Any, List, Tuple, Optional
 from sklearn.preprocessing import StandardScaler
 
 
-# Feature columns (must match training)
+# Feature columns (must match training) - ✅ FIXED: use spaces not underscore
 FEATURE_COLUMNS = [
     'age', 'gender', 'height_cm', 'weight_kg', 'body fat_%',
-    'diastolic', 'systolic', 'gripForce', 'sit_and_bend_forward_cm', 'sit-ups counts'
+    'diastolic', 'systolic', 'gripForce', 'sit and bend forward_cm', 'sit-ups counts'
 ]
 
 # Column ranges for validation
@@ -25,7 +25,7 @@ VALIDATION_RANGES = {
     'diastolic': (60, 120),
     'systolic': (90, 200),
     'gripForce': (10, 100),
-    'sit_and_bend_forward_cm': (-20, 50),
+    'sit and bend forward_cm': (-20, 50),
     'sit-ups counts': (0, 100),
     'broad jump_cm': (50, 350),
 }
@@ -34,16 +34,6 @@ VALIDATION_RANGES = {
 def encode_gender(gender_value: str) -> int:
     """
     Encode gender string to numeric value.
-    
-    Parameters:
-    -----------
-    gender_value : str
-        Gender string ('M', 'F', 'Male', 'Female')
-    
-    Returns:
-    --------
-    int
-        1 for Male, 0 for Female
     """
     if isinstance(gender_value, (int, float)):
         return int(gender_value)
@@ -55,43 +45,21 @@ def encode_gender(gender_value: str) -> int:
     elif gender_str in ['F', 'FEMALE', '0']:
         return 0
     else:
-        return 0  # Default to Female
+        return 0
 
 
 def encode_class(class_value: str) -> int:
     """
     Encode class string to numeric value.
-    
-    Parameters:
-    -----------
-    class_value : str
-        Class string ('A', 'B', 'C', 'D')
-    
-    Returns:
-    --------
-    int
-        3 for A (best), 2 for B, 1 for C, 0 for D (worst)
     """
     class_map = {'A': 3, 'B': 2, 'C': 1, 'D': 0}
-    
     class_str = str(class_value).strip().upper()
-    
     return class_map.get(class_str, 0)
 
 
 def decode_class(encoded_class: int) -> str:
     """
     Decode numeric class to string label.
-    
-    Parameters:
-    -----------
-    encoded_class : int
-        Numeric class (0, 1, 2, 3)
-    
-    Returns:
-    --------
-    str
-        Class label ('D', 'C', 'B', 'A')
     """
     decode_map = {0: 'D', 1: 'C', 2: 'B', 3: 'A'}
     return decode_map.get(encoded_class, 'D')
@@ -100,16 +68,6 @@ def decode_class(encoded_class: int) -> str:
 def get_class_description(class_label: str) -> Dict[str, str]:
     """
     Get description and interpretation for a performance class.
-    
-    Parameters:
-    -----------
-    class_label : str
-        Class label ('A', 'B', 'C', 'D')
-    
-    Returns:
-    --------
-    Dict
-        Description and interpretation
     """
     descriptions = {
         'A': {
@@ -141,29 +99,18 @@ def get_class_description(class_label: str) -> Dict[str, str]:
             'recommendation': 'Consider structured fitness program focusing on core areas.'
         }
     }
-    
     return descriptions.get(class_label, descriptions['D'])
 
 
 def cap_outliers(df: pd.DataFrame) -> pd.DataFrame:
     """
     Cap outliers based on training data thresholds.
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Input dataframe
-    
-    Returns:
-    --------
-    pd.DataFrame
-        Dataframe with capped outliers
     """
     df_clean = df.copy()
     
-    # Cap flexibility (same as in training)
-    if 'sit_and_bend_forward_cm' in df_clean.columns:
-        df_clean['sit_and_bend_forward_cm'] = df_clean['sit_and_bend_forward_cm'].clip(upper=42)
+    # Cap flexibility (same as in training) - ✅ FIXED: use correct column name
+    if 'sit and bend forward_cm' in df_clean.columns:
+        df_clean['sit and bend forward_cm'] = df_clean['sit and bend forward_cm'].clip(upper=42)
     
     # Cap diastolic zeros
     if 'diastolic' in df_clean.columns:
@@ -179,16 +126,6 @@ def cap_outliers(df: pd.DataFrame) -> pd.DataFrame:
 def validate_input(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Validate input data against expected ranges.
-    
-    Parameters:
-    -----------
-    data : dict
-        Input data dictionary
-    
-    Returns:
-    --------
-    Tuple[bool, List[str]]
-        (is_valid, list_of_warnings)
     """
     warnings = []
     
@@ -212,18 +149,6 @@ def preprocess_single_input(
 ) -> Tuple[np.ndarray, List[str]]:
     """
     Preprocess a single input sample.
-    
-    Parameters:
-    -----------
-    input_data : dict
-        Raw input data
-    scaler : StandardScaler, optional
-        Fitted scaler (if None, returns unscaled features)
-    
-    Returns:
-    --------
-    Tuple[np.ndarray, List[str]]
-        (processed features, warnings)
     """
     warnings = []
     
@@ -268,20 +193,6 @@ def preprocess_batch_data(
 ) -> Tuple[np.ndarray, Optional[np.ndarray], List[str]]:
     """
     Preprocess batch data for prediction.
-    
-    Parameters:
-    -----------
-    df : pd.DataFrame
-        Input dataframe
-    scaler : StandardScaler, optional
-        Fitted scaler
-    target_column : str, optional
-        Name of target column (if exists)
-    
-    Returns:
-    --------
-    Tuple[np.ndarray, Optional[np.ndarray], List[str]]
-        (features, targets, warnings)
     """
     warnings = []
     df_clean = df.copy()
@@ -319,11 +230,6 @@ def preprocess_batch_data(
 def get_feature_names() -> List[str]:
     """
     Get list of feature column names.
-    
-    Returns:
-    --------
-    List[str]
-        Feature names
     """
     return FEATURE_COLUMNS.copy()
 
@@ -331,14 +237,9 @@ def get_feature_names() -> List[str]:
 def get_feature_importance_info() -> Dict[str, Dict[str, Any]]:
     """
     Get information about feature importance from EDA.
-    
-    Returns:
-    --------
-    Dict
-        Feature importance information
     """
     return {
-        'sit_and_bend_forward_cm': {
+        'sit and bend forward_cm': {
             'name': 'Flexibility',
             'correlation': 0.59,
             'importance': 'highest',
