@@ -26,7 +26,7 @@ st.set_page_config(
 )
 
 # ============================================
-# LOGO IN SIDEBAR - ✅ FIXED: use width instead of use_container_width
+# LOGO IN SIDEBAR
 # ============================================
 logo_path = os.path.join('assets', 'logo.png')
 if os.path.exists(logo_path):
@@ -74,41 +74,77 @@ with col4:
     st.metric("Samples per Class", "~3,348")
 
 # ============================================
-# FEATURE CARDS - NAVIGATION
+# FEATURE CARDS - NAVIGATION (Professional Cards)
 # ============================================
 st.markdown("### 🚀 Explore the Application")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.info("🎯 **Individual Prediction**\n\nEnter participant data and get real-time predictions")
+    st.markdown("""
+    <div class="main-card" style="margin-bottom: 15px;">
+        <div style="font-size: 2rem; margin-bottom: 10px;">🎯</div>
+        <h3 style="margin-bottom: 10px; color: var(--st-color-primary);">Individual Prediction</h3>
+        <p style="font-size: 0.9rem;">Enter participant data and get real-time predictions</p>
+    </div>
+    """, unsafe_allow_html=True)
     if st.button("Go to Prediction →", key="btn_predict", use_container_width=True):
         st.switch_page("pages/1_🎯_Predict.py")
 
 with col2:
-    st.info("⚙️ **Model Tuning**\n\nAdjust hyperparameters and see real-time performance changes")
+    st.markdown("""
+    <div class="main-card" style="margin-bottom: 15px;">
+        <div style="font-size: 2rem; margin-bottom: 10px;">⚙️</div>
+        <h3 style="margin-bottom: 10px; color: var(--st-color-primary);">Model Tuning</h3>
+        <p style="font-size: 0.9rem;">Adjust hyperparameters and see real-time performance changes</p>
+    </div>
+    """, unsafe_allow_html=True)
     if st.button("Go to Model Tuning →", key="btn_tuning", use_container_width=True):
         st.switch_page("pages/2_⚙️_Model_Tuning.py")
 
 with col3:
-    st.info("📊 **Batch Prediction**\n\nUpload CSV files and get predictions for multiple participants")
+    st.markdown("""
+    <div class="main-card" style="margin-bottom: 15px;">
+        <div style="font-size: 2rem; margin-bottom: 10px;">📊</div>
+        <h3 style="margin-bottom: 10px; color: var(--st-color-primary);">Batch Prediction</h3>
+        <p style="font-size: 0.9rem;">Upload CSV files and get predictions for multiple participants</p>
+    </div>
+    """, unsafe_allow_html=True)
     if st.button("Go to Batch Predict →", key="btn_batch", use_container_width=True):
         st.switch_page("pages/3_📊_Batch_Predict.py")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.info("📈 **Compare Models**\n\nCompare performance of all 8 models")
+    st.markdown("""
+    <div class="main-card" style="margin-bottom: 15px;">
+        <div style="font-size: 2rem; margin-bottom: 10px;">📈</div>
+        <h3 style="margin-bottom: 10px; color: var(--st-color-primary);">Compare Models</h3>
+        <p style="font-size: 0.9rem;">Compare performance of all 8 models</p>
+    </div>
+    """, unsafe_allow_html=True)
     if st.button("Go to Compare →", key="btn_compare", use_container_width=True):
         st.switch_page("pages/4_📈_Compare_Models.py")
 
 with col2:
-    st.info("📄 **Generate Report**\n\nCreate comprehensive PDF reports")
+    st.markdown("""
+    <div class="main-card" style="margin-bottom: 15px;">
+        <div style="font-size: 2rem; margin-bottom: 10px;">📄</div>
+        <h3 style="margin-bottom: 10px; color: var(--st-color-primary);">Generate Report</h3>
+        <p style="font-size: 0.9rem;">Create comprehensive PDF reports</p>
+    </div>
+    """, unsafe_allow_html=True)
     if st.button("Go to Report →", key="btn_report", use_container_width=True):
         st.switch_page("pages/5_📄_Report.py")
 
 with col3:
-    st.info("ℹ️ **About**\n\nLearn about the project, methodology, and team")
+    st.markdown("""
+    <div class="main-card" style="margin-bottom: 15px;">
+        <div style="font-size: 2rem; margin-bottom: 10px;">ℹ️</div>
+        <h3 style="margin-bottom: 10px; color: var(--st-color-primary);">About</h3>
+        <p style="font-size: 0.9rem;">Learn about the project, methodology, and team</p>
+    </div>
+    """, unsafe_allow_html=True)
     if st.button("Go to About →", key="btn_about", use_container_width=True):
         st.switch_page("pages/6_ℹ️_About.py")
 
