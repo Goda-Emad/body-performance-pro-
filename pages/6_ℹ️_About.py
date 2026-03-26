@@ -9,30 +9,44 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
+import os
 
-# إعدادات الصفحة
+# ============================================
+# PAGE CONFIGURATION
+# ============================================
 st.set_page_config(
-    page_title="About | Body Performance Analytics",
+    page_title="About - Body Performance Pro",
     page_icon="ℹ️",
     layout="wide"
 )
 
-# تحميل CSS
-def load_css():
+# ============================================
+# LOGO IN SIDEBAR
+# ============================================
+logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'logo.png')
+if os.path.exists(logo_path):
+    st.sidebar.image(logo_path, width=150)
+st.sidebar.markdown("---")
+
+# ============================================
+# LOAD CUSTOM CSS (مسار صحيح للصفحات الفرعية)
+# ============================================
+css_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'style.css')
+if os.path.exists(css_path):
     try:
-        with open('assets/style.css', 'r') as f:
+        with open(css_path, 'r', encoding='utf-8') as f:
             css = f.read()
         st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
-    except:
-        pass
+    except Exception as e:
+        st.write(f"⚠️ Could not load CSS: {e}")
 
-load_css()
-
-# العنوان
+# ============================================
+# HEADER
+# ============================================
 st.markdown("""
 <div class="main-header">
-    <div class="main-title">ℹ️ About This Project</div>
-    <div class="main-subtitle">Body Performance Analytics and Intelligent Classification System</div>
+    <h1>ℹ️ About This Project</h1>
+    <p>Body Performance Analytics and Intelligent Classification System</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -80,7 +94,7 @@ col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
     st.markdown("""
-    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+    <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px;">
         <div style="font-size: 2rem;">👤</div>
         <div style="font-weight: bold;">Goda EMAD</div>
         <div style="font-size: 0.8rem; color: #64748b;">Team Leader</div>
@@ -89,7 +103,7 @@ with col1:
 
 with col2:
     st.markdown("""
-    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+    <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px;">
         <div style="font-size: 2rem;">👤</div>
         <div style="font-weight: bold;">Ahmed Salama</div>
         <div style="font-size: 0.8rem; color: #64748b;">ML Engineer</div>
@@ -98,7 +112,7 @@ with col2:
 
 with col3:
     st.markdown("""
-    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+    <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px;">
         <div style="font-size: 2rem;">👤</div>
         <div style="font-weight: bold;">Alwafa Ashour</div>
         <div style="font-size: 0.8rem; color: #64748b;">Data Analyst</div>
@@ -107,7 +121,7 @@ with col3:
 
 with col4:
     st.markdown("""
-    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+    <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px;">
         <div style="font-size: 2rem;">👤</div>
         <div style="font-weight: bold;">Ibrahim Elshafey</div>
         <div style="font-size: 0.8rem; color: #64748b;">Backend Developer</div>
@@ -116,7 +130,7 @@ with col4:
 
 with col5:
     st.markdown("""
-    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+    <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 15px;">
         <div style="font-size: 2rem;">👤</div>
         <div style="font-weight: bold;">Elia Fahmy</div>
         <div style="font-size: 0.8rem; color: #64748b;">Frontend Developer</div>
@@ -177,11 +191,10 @@ with col1:
     
     | Category | Libraries |
     |----------|----------|
-    | **Core** | Python 3.12, pandas, numpy |
+    | **Core** | Python 3.11, pandas, numpy |
     | **ML** | scikit-learn, joblib |
     | **Visualization** | plotly, matplotlib, seaborn |
     | **Web App** | streamlit |
-    | **Reports** | reportlab |
     """)
 
 with col2:
@@ -234,11 +247,11 @@ insights = [
 
 for insight in insights:
     st.markdown(f"""
-    <div style="display: flex; align-items: center; margin-bottom: 1rem; padding: 0.5rem; background: #f8fafc; border-radius: 10px;">
+    <div style="display: flex; align-items: center; margin-bottom: 1rem; padding: 0.5rem; background: rgba(255,255,255,0.03); border-radius: 10px;">
         <div style="font-size: 2rem; margin-right: 1rem;">{insight['icon']}</div>
         <div>
             <strong>{insight['insight']}</strong><br>
-            <span style="color: #64748b;">{insight['detail']}</span>
+            <span style="color: #aaa;">{insight['detail']}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -337,10 +350,13 @@ This project is developed for educational purposes as part of the **Introduction
 """)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Footer
+# ============================================
+# FOOTER - Professional Dark Theme
+# ============================================
+st.markdown("---")
 st.markdown("""
-<div style="text-align: center; padding: 2rem; margin-top: 2rem; background: #f8fafc; border-radius: 20px;">
-    <p style="color: #64748b;">© 2026 Body Performance Analytics Team | Introduction to AI and Machine Learning</p>
-    <p style="color: #94a3b8; font-size: 0.8rem;">All predictions are for educational purposes only.</p>
+<div class="footer">
+    <p>© 2026 Body Performance Analytics Team | Introduction to AI and Machine Learning</p>
+    <p style="font-size: 0.8rem; color: var(--st-color-text-secondary);">All predictions are for educational purposes only.</p>
 </div>
 """, unsafe_allow_html=True)
