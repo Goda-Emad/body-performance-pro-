@@ -5,6 +5,16 @@ Allows users to input participant data and get predictions from all models.
 """
 
 import streamlit as st
+
+# ============================================
+# PAGE CONFIGURATION - يجب أن يكون أول أمر
+# ============================================
+st.set_page_config(
+    page_title="Predict | Body Performance Analytics",
+    page_icon="🎯",
+    layout="wide"
+)
+
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -17,15 +27,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.model_loader import load_models
 from utils.prediction import predict_classification, predict_regression
 import io
-
-# ============================================
-# PAGE CONFIGURATION
-# ============================================
-st.set_page_config(
-    page_title="Predict | Body Performance Analytics",
-    page_icon="🎯",
-    layout="wide"
-)
 
 # ============================================
 # LOAD CUSTOM CSS
@@ -101,7 +102,6 @@ def get_models():
         return models
     except Exception as e:
         st.error(f"❌ Error loading models: {e}")
-        st.info("Please ensure model files are in the 'models/' folder")
         return None
 
 models = get_models()
@@ -143,7 +143,7 @@ with col_input:
         'diastolic': diastolic,
         'systolic': systolic,
         'gripForce': grip_force,
-        'sit_and_bend_forward_cm': flexibility,
+        'sit and bend forward_cm': flexibility,
         'sit-ups counts': sit_ups
     }
     
@@ -165,7 +165,7 @@ def preprocess_input(input_data, scaler):
     """Preprocess single input sample"""
     feature_cols = [
         'age', 'gender', 'height_cm', 'weight_kg', 'body fat_%',
-        'diastolic', 'systolic', 'gripForce', 'sit_and_bend_forward_cm', 'sit-ups counts'
+        'diastolic', 'systolic', 'gripForce', 'sit and bend forward_cm', 'sit-ups counts'
     ]
     X = np.array([[input_data[col] for col in feature_cols]])
     X_scaled = scaler.transform(X)
