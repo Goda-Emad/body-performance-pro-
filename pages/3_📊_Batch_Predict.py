@@ -5,6 +5,16 @@ Allows users to upload CSV files and get predictions for multiple participants.
 """
 
 import streamlit as st
+
+# ============================================
+# PAGE CONFIGURATION - يجب أن يكون أول أمر
+# ============================================
+st.set_page_config(
+    page_title="Batch Predict | Body Performance Analytics",
+    page_icon="📊",
+    layout="wide"
+)
+
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -42,13 +52,6 @@ try:
 except Exception as e:
     st.write(f"❌ Failed to load knn_model.pkl: {e}")
 st.write("=== END DEBUG ===")
-
-# إعدادات الصفحة
-st.set_page_config(
-    page_title="Batch Predict | Body Performance Analytics",
-    page_icon="📊",
-    layout="wide"
-)
 
 # تحميل CSS
 def load_css():
