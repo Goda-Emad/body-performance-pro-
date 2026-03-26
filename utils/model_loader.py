@@ -11,7 +11,7 @@ from typing import Dict, Any
 # مسار مجلد النماذج
 MODELS_DIR = 'models'
 
-# تعيين أسماء الملفات - تطابق الأسماء في GitHub
+# تعيين أسماء الملفات - تأكد من تطابق الأسماء
 MODEL_FILES = {
     'knn': 'knn_model.pkl',
     'dt': 'dt_model.pkl',
@@ -21,15 +21,18 @@ MODEL_FILES = {
     'scaler': 'scaler.pkl',
     'linear_regression': 'linear_regression.pkl',
     'dt_regressor': 'dt_regressor.pkl',
-    'svr': 'svr_model.pkl',
+    'svr': 'svr_model.pkl',          # ← اسم الملف الصحيح
     'mlp_regressor': 'mlp_regressor.pkl',
 }
 
 
 def load_pickle_model(file_path: str):
     """Load a model from a pickle file."""
-    with open(file_path, 'rb') as f:
-        return pickle.load(f)
+    try:
+        with open(file_path, 'rb') as f:
+            return pickle.load(f)
+    except Exception as e:
+        raise Exception(f"Error loading {file_path}: {e}")
 
 
 def load_models() -> Dict[str, Any]:
@@ -44,8 +47,12 @@ def load_models() -> Dict[str, Any]:
     models = {}
     missing = []
     
-    # طباعة مسار المجلد للتأكد
-    print(f"Looking for models in: {os.path.abspath(MODELS_DIR)}")
+    # Debug: print current directory and models folder
+    print(f"Current directory: {os.getcwd()}")
+    print(f"Models folder exists: {os.path.exists(MODELS_DIR)}")
+    
+    if os.path.exists(MODELS_DIR):
+        print(f"Files in models/: {os.listdir(MODELS_DIR)}")
     
     for model_key, file_name in MODEL_FILES.items():
         file_path = os.path.join(MODELS_DIR, file_name)
