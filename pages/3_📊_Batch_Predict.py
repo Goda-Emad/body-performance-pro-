@@ -25,33 +25,8 @@ from utils.model_loader import load_models
 from utils.preprocessing import preprocess_batch_data, get_feature_names
 from utils.prediction import predict_batch, predict_classification
 from utils.visualizations import create_distribution_plot, create_comparison_chart
-# from utils.report_generator import ReportGenerator  # Temporarily disabled - reportlab not installed
 import time
 import os
-
-# ============================================
-# DEBUG: Check models folder
-# ============================================
-st.write("=== DEBUG: Checking models folder ===")
-if os.path.exists('models'):
-    st.write(f"✅ models folder exists")
-    files = os.listdir('models')
-    st.write(f"Files: {files}")
-    for f in files:
-        size = os.path.getsize(f'models/{f}')
-        st.write(f"  - {f}: {size} bytes")
-else:
-    st.write("❌ models folder NOT found!")
-
-# Test loading one model
-try:
-    import pickle
-    with open('models/knn_model.pkl', 'rb') as f:
-        test_model = pickle.load(f)
-    st.write("✅ Successfully loaded knn_model.pkl")
-except Exception as e:
-    st.write(f"❌ Failed to load knn_model.pkl: {e}")
-st.write("=== END DEBUG ===")
 
 # تحميل CSS
 def load_css():
@@ -114,7 +89,7 @@ with col_left:
         help="Upload a file with the required columns. You can download a sample template below."
     )
     
-    # تحميل نموذج - ✅ FIXED: use correct column name with spaces
+    # تحميل نموذج
     sample_df = pd.DataFrame({
         'age': [25, 30, 35],
         'gender': ['M', 'F', 'M'],
@@ -124,7 +99,7 @@ with col_left:
         'diastolic': [80, 75, 85],
         'systolic': [120, 115, 130],
         'gripForce': [45, 35, 50],
-        'sit and bend forward_cm': [15, 20, 10],  # ✅ FIXED: spaces, not underscore
+        'sit and bend forward_cm': [15, 20, 10],
         'sit-ups counts': [45, 40, 35],
         'broad jump_cm': [200, 180, 190],
         'class': ['B', 'C', 'B']
