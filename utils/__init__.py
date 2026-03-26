@@ -6,7 +6,6 @@ This package contains helper functions for:
 - model_loader: Load trained models
 - preprocessing: Scale and encode input data
 - prediction: Make predictions with trained models
-- report_generator: Generate PDF reports
 - visualizations: Create interactive plots
 """
 
@@ -104,17 +103,12 @@ except ImportError:
     get_prediction_summary = None
 
 # ============================================
-# Report Generator
+# Report Generator - Temporarily Disabled
 # ============================================
-try:
-    from .report_generator import (
-        ReportGenerator,
-        generate_summary
-    )
-except ImportError:
-    # Fallback if file doesn't exist
-    ReportGenerator = None
-    generate_summary = None
+# Report generator requires reportlab which is not installed on Streamlit Cloud
+# Will be re-enabled when reportlab is available
+ReportGenerator = None
+generate_summary = None
 
 # ============================================
 # Visualizations
@@ -180,9 +174,9 @@ __all__ = [
     'predict_with_confidence',
     'compare_models_predictions',
     'get_prediction_summary',
-    # Report
-    'ReportGenerator',
-    'generate_summary',
+    # Report - Disabled
+    # 'ReportGenerator',
+    # 'generate_summary',
     # Visualization
     'create_confusion_matrix',
     'create_comparison_chart',
