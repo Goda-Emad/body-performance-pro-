@@ -1,11 +1,11 @@
-# Core - إصدارات متوافقة مع Colab
+# Core
 streamlit==1.31.0
 pandas==2.1.0
-numpy==1.24.3
+numpy==1.26.4
 
-# Machine Learning - إصدارات متوافقة
-scikit-learn==1.3.0
-joblib==1.3.0
+# Machine Learning
+scikit-learn==1.4.2
+joblib==1.3.2
 
 # Visualization
 plotly==5.18.0
