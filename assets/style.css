@@ -1,248 +1,311 @@
-/* ============================================
-   Body Performance Analytics - Dark Modern Theme
-   ============================================ */
+/* ========================================= */
+/* Body Performance Analytics - Professional Dark Theme */
+/* ========================================= */
 
-/* تغيير خلفية التطبيق بالكامل */
-[data-testid="stAppViewContainer"] {
-    background: linear-gradient(180deg, #0e1117 0%, #161b22 100%);
-}
+/* ========================================= */
+/* 1. تنسيق الكروت الاحترافية (Glassmorphism) */
+/* ========================================= */
 
-/* تحسين شكل الكروت (Cards) */
 div[data-testid="stMetric"], 
-.stMarkdown div[style*="background-color"],
-div[class*="stMetric"] {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px !important;
-    padding: 20px !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
+.stMetric, 
+.main-card,
+div.element-container {
+    background: var(--st-color-background-secondary) !important;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    text-align: center;
 }
 
-div[data-testid="stMetric"]:hover {
-    border-color: #00d4ff !important;
+div[data-testid="stMetric"]:hover, 
+.stMetric:hover, 
+.main-card:hover,
+div.element-container:hover {
     transform: translateY(-5px);
+    border-color: var(--st-color-primary) !important;
+    box-shadow: 0 8px 25px rgba(0, 163, 196, 0.2);
 }
 
-/* تلوين العناوين */
-h1, h2, h3, h4, h5, h6,
+/* ========================================= */
+/* 2. تحسين لون العناوين والنصوص (حل مشكلة التباين) */
+/* ========================================= */
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--st-color-primary) !important;
+    font-weight: 700 !important;
+}
+
+/* النصوص الفرعية */
+[data-testid="stMetricLabel"], 
+.main-card p, 
 [data-testid="stMarkdownContainer"] p,
-.stMarkdown p {
-    color: #ffffff !important;
+.stMarkdown p,
+p {
+    color: var(--st-color-text-secondary) !important;
+    opacity: 1 !important;
 }
 
-/* تعديل السايد بار */
+/* الأرقام الرئيسية */
+[data-testid="stMetricValue"] {
+    color: var(--st-color-text) !important;
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+}
+
+/* ========================================= */
+/* 3. تنسيق الشريط الجانبي (Sidebar) */
+/* ========================================= */
+
 [data-testid="stSidebar"] {
-    background-color: #0b0e11 !important;
-    border-right: 1px solid rgba(0, 212, 255, 0.1);
+    background-color: var(--st-color-background-secondary) !important;
+    border-right: 1px solid rgba(0, 163, 196, 0.1);
 }
 
-/* الأزرار */
-.stButton > button {
-    background-color: #00d4ff !important;
-    color: #0e1117 !important;
+/* الروابط في السايد بار */
+[data-testid="stSidebarNav"] a {
+    color: var(--st-color-text) !important;
+    text-decoration: none !important;
+    padding: 8px 12px !important;
     border-radius: 8px !important;
-    font-weight: bold !important;
+    margin: 2px 0 !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-testid="stSidebarNav"] a:hover {
+    color: var(--st-color-primary) !important;
+    background-color: rgba(0, 163, 196, 0.1) !important;
+}
+
+/* ========================================= */
+/* 4. تجميل الـ Header (العنوان الرئيسي) */
+/* ========================================= */
+
+.main-header {
+    background: linear-gradient(135deg, rgba(0, 163, 196, 0.1) 0%, rgba(14, 17, 23, 0) 100%);
+    padding: 30px;
+    border-radius: 12px;
+    border-left: 5px solid var(--st-color-primary);
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.main-header h1 {
+    color: var(--st-color-text) !important;
+    margin: 0;
+    font-size: 2.2rem;
+}
+
+.main-header p {
+    color: var(--st-color-primary);
+    margin-top: 8px;
+    opacity: 0.85;
+    font-size: 1rem;
+}
+
+/* ========================================= */
+/* 5. تنسيق الأزرار */
+/* ========================================= */
+
+.stButton > button {
+    background: linear-gradient(135deg, #00A3C4 0%, #0082A0 100%) !important;
+    color: white !important;
     border: none !important;
-    transition: all 0.3s ease;
+    border-radius: 8px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
 }
 
 .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 163, 196, 0.4) !important;
+    background: linear-gradient(135deg, #00B8DC 0%, #0096B8 100%) !important;
 }
 
-/* تحسين شكل الـ Cards اللي فيها معلومات */
-.card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
+.stButton > button:active {
+    transform: translateY(0);
 }
 
-.card:hover {
-    border-color: #00d4ff;
-    transform: translateY(-3px);
+/* ========================================= */
+/* 6. تنسيق حقول الإدخال */
+/* ========================================= */
+
+.stTextInput > div > div > input,
+.stNumberInput > div > div > input,
+.stSelectbox > div > div > select,
+.stTextArea > div > textarea {
+    background-color: var(--st-color-background-secondary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: var(--st-color-text) !important;
+    padding: 8px 12px !important;
 }
 
-/* تحسين شكل الجداول */
+.stTextInput > div > div > input:focus,
+.stNumberInput > div > div > input:focus,
+.stSelectbox > div > div > select:focus,
+.stTextArea > div > textarea:focus {
+    border-color: var(--st-color-primary) !important;
+    box-shadow: 0 0 0 2px rgba(0, 163, 196, 0.2) !important;
+    outline: none !important;
+}
+
+/* ========================================= */
+/* 7. تنسيق الجداول */
+/* ========================================= */
+
 .dataframe {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-radius: 10px;
-    overflow: hidden;
-    color: white !important;
+    background: var(--st-color-background-secondary) !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    width: 100% !important;
 }
 
 .dataframe th {
-    background: #00d4ff !important;
-    color: #0e1117 !important;
-    padding: 8px !important;
+    background: var(--st-color-primary) !important;
+    color: white !important;
+    padding: 10px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
 }
 
 .dataframe td {
-    background: rgba(255, 255, 255, 0.02) !important;
-    color: #e0e0e0 !important;
-    padding: 6px 8px !important;
+    background: var(--st-color-background-secondary) !important;
+    color: var(--st-color-text) !important;
+    padding: 8px 10px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    text-align: center !important;
 }
 
 .dataframe tr:hover td {
-    background: rgba(0, 212, 255, 0.1) !important;
+    background: rgba(0, 163, 196, 0.1) !important;
 }
 
-/* تحسين شكل الـ Expander */
-.streamlit-expanderHeader {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-radius: 10px !important;
-    color: white !important;
-}
+/* ========================================= */
+/* 8. تنسيق التبويبات (Tabs) */
+/* ========================================= */
 
-.streamlit-expanderHeader:hover {
-    background: rgba(0, 212, 255, 0.1) !important;
-}
-
-/* تحسين شكل الـ Tabs */
 .stTabs [data-baseweb="tab-list"] {
     gap: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 6px;
+    background: var(--st-color-background-secondary);
+    padding: 8px;
     border-radius: 12px;
+    margin-bottom: 16px;
 }
 
 .stTabs [data-baseweb="tab"] {
-    background: transparent;
-    border-radius: 8px;
-    color: #aaa;
-    font-weight: 500;
-    transition: all 0.2s;
+    background: transparent !important;
+    border-radius: 8px !important;
+    color: var(--st-color-text-secondary) !important;
+    font-weight: 500 !important;
+    padding: 8px 20px !important;
+    transition: all 0.2s ease !important;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
-    color: #00d4ff;
-    background: rgba(0, 212, 255, 0.1);
+    color: var(--st-color-primary) !important;
+    background: rgba(0, 163, 196, 0.1) !important;
 }
 
 .stTabs [aria-selected="true"] {
-    background: #00d4ff !important;
-    color: #0e1117 !important;
-}
-
-/* تحسين شكل الـ Selectbox */
-.stSelectbox > div > div {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px !important;
+    background: linear-gradient(135deg, #00A3C4 0%, #0082A0 100%) !important;
     color: white !important;
 }
 
-/* تحسين شكل الـ Number Input */
-.stNumberInput > div > div > input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px !important;
-    color: white !important;
-}
+/* ========================================= */
+/* 9. تنسيق الـ Expander */
+/* ========================================= */
 
-.stNumberInput > div > div > input:focus {
-    border-color: #00d4ff !important;
-    box-shadow: 0 0 0 1px #00d4ff !important;
-}
-
-/* تحسين شكل الـ Radio */
-.stRadio > div {
-    color: white !important;
-}
-
-/* تحسين شكل الـ Checkbox */
-.stCheckbox > label {
-    color: white !important;
-}
-
-/* تحسين شكل الـ File Uploader */
-[data-testid="stFileUploader"] {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px dashed rgba(0, 212, 255, 0.5) !important;
+.streamlit-expanderHeader {
+    background: var(--st-color-background-secondary) !important;
     border-radius: 10px !important;
-    padding: 1rem !important;
+    color: var(--st-color-primary) !important;
+    font-weight: 600 !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding: 12px !important;
 }
 
-/* تحسين شكل الـ Slider */
-.stSlider > div > div > div {
-    color: #00d4ff !important;
+.streamlit-expanderHeader:hover {
+    background: rgba(0, 163, 196, 0.1) !important;
+    border-color: var(--st-color-primary) !important;
 }
 
-/* تحسين شكل الـ Progress Bar */
-.stProgress > div > div > div {
-    background: linear-gradient(90deg, #00d4ff, #0066cc) !important;
-}
+/* ========================================= */
+/* 10. تنسيق الـ Alert (تنبيهات) */
+/* ========================================= */
 
-/* تحسين شكل الـ Alert */
 .stAlert {
-    background: rgba(0, 212, 255, 0.1) !important;
-    border-left: 4px solid #00d4ff !important;
-    color: white !important;
+    background: rgba(0, 163, 196, 0.1) !important;
+    border-left: 4px solid var(--st-color-primary) !important;
+    border-radius: 8px !important;
+    color: var(--st-color-text) !important;
 }
 
-/* تحسين شكل الـ Info/Warning/Success/Error */
-.stAlert [data-testid="stMarkdownContainer"] p {
-    color: white !important;
-}
+/* ========================================= */
+/* 11. تنسيق الفوتر (Footer) */
+/* ========================================= */
 
-/* تنسيق الفوتر */
 .footer {
     text-align: center;
-    padding: 1.5rem;
-    margin-top: 2rem;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 15px;
-    color: #888;
+    padding: 20px;
+    margin-top: 30px;
+    background: var(--st-color-background-secondary);
+    border-radius: 12px;
+    color: var(--st-color-text-secondary);
     font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* تنسيق الـ Sidebar Logo */
-.sidebar-logo {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1rem;
-}
+/* ========================================= */
+/* 12. تنسيق البادج (Badges) */
+/* ========================================= */
 
-/* تنسيق الـ Metrics */
-.metric-value {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #00d4ff;
-    text-align: center;
-}
-
-.metric-label {
-    font-size: 0.85rem;
-    color: #aaa;
-    text-align: center;
-    margin-top: 0.3rem;
-}
-
-/* تنسيق البادج */
 .badge {
     display: inline-block;
-    padding: 0.2rem 0.6rem;
+    padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.7rem;
     font-weight: 600;
+    margin: 0 4px;
 }
 
 .badge-primary {
-    background: #00d4ff;
-    color: #0e1117;
+    background: linear-gradient(135deg, #00A3C4 0%, #0082A0 100%);
+    color: white;
 }
 
-/* تنسيق الـ Hover للروابط */
-a {
-    color: #00d4ff !important;
-    text-decoration: none;
+.badge-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
 }
 
-a:hover {
-    color: #33ddff !important;
-    text-decoration: underline;
+.badge-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+/* ========================================= */
+/* 13. تنسيق شريط التمرير (Scrollbar) */
+/* ========================================= */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--st-color-background-secondary);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--st-color-primary);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #00B8DC;
 }
