@@ -8,8 +8,14 @@ import pickle
 import os
 from typing import Dict, Any
 
-# مسار مجلد النماذج
-MODELS_DIR = 'models'
+# ============================================
+# تحديد المسار المطلق للمشروع
+# ============================================
+# BASE_DIR = المسار الرئيسي للمشروع (body-performance-pro)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# دمج المسار الرئيسي مع مجلد models
+MODELS_DIR = os.path.join(BASE_DIR, 'models')
 
 # تعيين أسماء الملفات
 MODEL_FILES = {
@@ -47,9 +53,16 @@ def load_models() -> Dict[str, Any]:
     models = {}
     missing = []
     
-    # Check if models directory exists
+    # طباعة معلومات Debug لمعرفة المسار
+    print(f"DEBUG: BASE_DIR = {BASE_DIR}")
+    print(f"DEBUG: MODELS_DIR = {MODELS_DIR}")
+    print(f"DEBUG: MODELS_DIR exists = {os.path.exists(MODELS_DIR)}")
+    
     if not os.path.exists(MODELS_DIR):
         raise Exception(f"Models directory '{MODELS_DIR}' not found. Please ensure models are properly set up.")
+    
+    # عرض الملفات الموجودة
+    print(f"DEBUG: Files in models: {os.listdir(MODELS_DIR)}")
     
     for model_key, file_name in MODEL_FILES.items():
         file_path = os.path.join(MODELS_DIR, file_name)
