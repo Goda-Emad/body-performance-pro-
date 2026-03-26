@@ -34,16 +34,15 @@ def load_models() -> Dict[str, Any]:
     """
     models = {}
     
-    # المسار المطلق للمشروع (مهما كان مكان التشغيل)
+    # تحديد المسار المطلق بشكل يشتغل على السيرفر
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     MODELS_DIR = os.path.join(BASE_DIR, 'models')
     
     print(f"DEBUG: Loading models from: {MODELS_DIR}")
     
+    # تحميل النماذج مباشرة بدون try-except
     for model_key, file_name in MODEL_FILES.items():
         file_path = os.path.join(MODELS_DIR, file_name)
-        
-        # تحميل النموذج مباشرة (بدون try/except لإظهار الخطأ الحقيقي)
         with open(file_path, 'rb') as f:
             models[model_key] = pickle.load(f)
         print(f"✅ Loaded {model_key}")
