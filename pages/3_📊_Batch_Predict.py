@@ -15,7 +15,7 @@ from utils.model_loader import load_models
 from utils.preprocessing import preprocess_batch_data, get_feature_names
 from utils.prediction import predict_batch, predict_classification
 from utils.visualizations import create_distribution_plot, create_comparison_chart
-from utils.report_generator import ReportGenerator
+# from utils.report_generator import ReportGenerator  # Temporarily disabled - reportlab not installed
 import time
 
 # إعدادات الصفحة
@@ -104,7 +104,7 @@ with col_left:
     
     csv = sample_df.to_csv(index=False)
     b64 = base64.b64encode(csv.encode()).decode()
-    st.markdown(f'<a href="data:file/csv;base64,{b64}" download="sample_data.csv">📥 Download Sample CSV Template</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="data:file/csv;base64,{b64}" download="sample_data.csv" style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; margin-top: 0.5rem;">📥 Download Sample CSV Template</a>', unsafe_allow_html=True)
     
     # إعدادات التنبؤ
     st.markdown("---")
@@ -328,7 +328,7 @@ if uploaded_file and predict_btn:
                 # CSV download
                 csv_output = results_df.to_csv(index=False)
                 b64_csv = base64.b64encode(csv_output.encode()).decode()
-                st.markdown(f'<a href="data:file/csv;base64,{b64_csv}" download="predictions.csv" class="stButton">📥 Download CSV Results</a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="data:file/csv;base64,{b64_csv}" download="predictions.csv" class="stButton" style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; margin: 0.25rem;">📥 Download CSV Results</a>', unsafe_allow_html=True)
                 
                 # Excel download
                 output = BytesIO()
@@ -336,45 +336,7 @@ if uploaded_file and predict_btn:
                     results_df.to_excel(writer, sheet_name='Predictions', index=False)
                 excel_data = output.getvalue()
                 b64_excel = base64.b64encode(excel_data).decode()
-                st.markdown(f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_excel}" download="predictions.xlsx" class="stButton">📥 Download Excel Results</a>', unsafe_allow_html=True)
-                
-                # PDF report
-                if st.button("📄 Generate PDF Report", use_container_width=True):
-                    with st.spinner("Generating PDF..."):
-                        try:
-                            report_gen = ReportGenerator(title="Batch Prediction Report")
-                            
-                            # Prepare predictions for report
-                            pred_dict = {}
-                            if prediction_type in ["Classification Only", "Both"]:
-                                pred_dict['classification'] = {
-                                    'predicted_class': results_df['predicted_class'].iloc[0],
-                                    'confidence': None
-                                }
-                            if prediction_type in ["Regression Only", "Both"]:
-                                pred_dict['regression'] = {
-                                    'predicted_value': results_df['predicted_broad_jump_cm'].iloc[0] if 'predicted_broad_jump_cm' in results_df else 0
-                                }
-                            
-                            # Sample input data
-                            sample_input = {col: df[col].iloc[0] for col in get_feature_names()[:5]}
-                            
-                            pdf_buffer = report_gen.generate_report(
-                                input_data=sample_input,
-                                predictions=pred_dict,
-                                model_results={},
-                                include_charts=True
-                            )
-                            
-                            st.download_button(
-                                label="📥 Download PDF Report",
-                                data=pdf_buffer,
-                                file_name="batch_prediction_report.pdf",
-                                mime="application/pdf",
-                                use_container_width=True
-                            )
-                        except Exception as e:
-                            st.error(f"Error generating PDF: {e}")
+                st.markdown(f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_excel}" download="predictions.xlsx" class="stButton" style="display: inline-block; padding: 0.5rem 1rem; background-color: #2c4e6e; color: white; border-radius: 8px; text-decoration: none; margin: 0.25rem;">📥 Download Excel Results</a>', unsafe_allow_html=True)
                 
                 st.markdown('</div>', unsafe_allow_html=True)
                 
@@ -416,7 +378,6 @@ with st.sidebar:
     - Preview table with predictions
     - Distribution charts
     - CSV/Excel download
-    - PDF report (optional)
     """)
     
     st.markdown("---")
