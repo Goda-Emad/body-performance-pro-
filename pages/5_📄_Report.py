@@ -1,7 +1,7 @@
 """
-Page: Generate Report - Simplified Version
+Page: Generate Report
 -------------------------------------------
-Generate summary reports without PDF (uses CSV/Excel download instead).
+Generate comprehensive reports with analysis and predictions.
 """
 
 import streamlit as st
@@ -93,16 +93,16 @@ with col1:
             sit_ups = st.number_input("Sit-ups Count", min_value=0, max_value=100, value=40)
         
         input_data = {
-            'age': age,
-            'gender': gender,
-            'height_cm': height,
-            'weight_kg': weight,
-            'body fat_%': body_fat,
-            'diastolic': diastolic,
-            'systolic': systolic,
-            'gripForce': grip_force,
-            'sit_and_bend_forward_cm': flexibility,
-            'sit-ups counts': sit_ups
+            'Age': age,
+            'Gender': gender,
+            'Height (cm)': height,
+            'Weight (kg)': weight,
+            'Body Fat (%)': body_fat,
+            'Diastolic BP': diastolic,
+            'Systolic BP': systolic,
+            'Grip Force (kg)': grip_force,
+            'Flexibility (cm)': flexibility,
+            'Sit-ups Count': sit_ups
         }
         
         # Manual prediction input
@@ -223,10 +223,10 @@ st.markdown('</div>', unsafe_allow_html=True)
 if generate_btn:
     with st.spinner("🔄 Generating report..."):
         try:
-            # Create results dataframe
             results_data = []
             
-            if report_type == "Full Analysis Report" or report_type == "Single Prediction Report":
+            # --- 1. Full Analysis Report (جدول النماذج فقط) ---
+            if report_type == "Full Analysis Report":
                 # Add classification results
                 for model, metrics in CLASSIFICATION_RESULTS.items():
                     row = {
@@ -268,47 +268,79 @@ if generate_btn:
                     ]
                 }
                 summary_df = pd.DataFrame(summary_data)
-                
-            elif report_type == "Single Prediction Report" and 'input_data' in locals():
-                # Single prediction report
-                results_df = pd.DataFrame([input_data]).T
-                results_df.columns = ['Value']
-                results_df.index.name = 'Feature'
-                results_df = results_df.reset_index()
-                
-                summary_df = pd.DataFrame({
-                    'Metric': ['Predicted Class', 'Predicted Broad Jump'],
-                    'Value': [pred_class, f"{pred_jump:.1f} cm"]
-                })
-                
-            else:
-                results_df = pd.DataFrame({'Message': ['No data available']})
-                summary_df = pd.DataFrame({'Message': ['Upload a file to generate report']})
             
-            # CSV download
+            # --- 2. Single Prediction Report (بيانات المتدرب ونتيجته فقط) ---
+            elif report_type == "Single Prediction Report" and 'input_data' in locals():
+                # دمج بيانات المستخدم مع النتيجة في صف واحد
+                personal_report = input_data.copy()
+                personal_report['Predicted Class'] = pred_class
+                personal_report['Predicted Broad Jump (cm)'] = round(pred_jump, 1)
+                
+                # الجدول الأساسي (صف واحد فيه كل حاجة)
+                results_df = pd.DataFrame([personal_report])
+                
+                # ملخص سريع للمتدرب
+                summary_df = pd.DataFrame({
+                    'Metric': ['Predicted Class', 'Predicted Broad Jump', 'Report Date'],
+                    'Value': [pred_class, f"{pred_jump:.1f} cm", datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
+                })
+            
+            # --- 3. Batch Summary Report ---
+            elif report_type == "Batch Summary Report" and 'batch_df' in locals():
+                results_df = batch_df.copy()
+                summary_df = pd.DataFrame({
+                    'Metric': ['Total Records', 'Generated Date'],
+                    'Value': [len(batch_df), datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
+                })
+            
+            # --- 4. Fallback (لو مفيش بيانات) ---
+            else:
+                results_df = pd.DataFrame({'Message': ['No data available. Please fill in participant data or upload a file.']})
+                summary_df = pd.DataFrame({'Message': ['Please configure the report first.']})
+            
+            # --- تجهيز الملفات للتحميل ---
             csv_output = results_df.to_csv(index=False)
             b64_csv = base64.b64encode(csv_output.encode()).decode()
             
-            # Summary CSV
             summary_csv = summary_df.to_csv(index=False)
             b64_summary = base64.b64encode(summary_csv.encode()).decode()
             
+            # اسم الملف حسب نوع التقرير
+            file_name_safe = report_type.replace(" ", "_").replace("/", "_")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
             st.success("✅ Report generated successfully!")
             
+            # --- زراير التحميل ---
             col_a, col_b = st.columns(2)
             with col_a:
-                st.markdown(f'<a href="data:file/csv;base64,{b64_csv}" download="performance_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv" style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">📥 Download Full Report (CSV)</a>', unsafe_allow_html=True)
+                st.markdown(f'''
+                <a href="data:file/csv;base64,{b64_csv}" 
+                   download="{file_name_safe}_{timestamp}.csv" 
+                   style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">
+                   📥 Download Full Report (CSV)
+                </a>
+                ''', unsafe_allow_html=True)
             
             with col_b:
-                st.markdown(f'<a href="data:file/csv;base64,{b64_summary}" download="summary_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv" style="display: inline-block; padding: 0.5rem 1rem; background-color: #2c4e6e; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">📥 Download Summary (CSV)</a>', unsafe_allow_html=True)
+                st.markdown(f'''
+                <a href="data:file/csv;base64,{b64_summary}" 
+                   download="Summary_{file_name_safe}_{timestamp}.csv" 
+                   style="display: inline-block; padding: 0.5rem 1rem; background-color: #2c4e6e; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">
+                   📥 Download Summary (CSV)
+                </a>
+                ''', unsafe_allow_html=True)
             
-            # Display preview
+            # --- عرض الـ Preview قبل التحميل ---
             st.markdown("---")
-            st.markdown("### 📊 Report Preview")
-            st.dataframe(results_df.head(20), use_container_width=True)
+            st.markdown(f"### 📊 Report Preview: {report_type}")
             
-            if len(results_df) > 20:
-                st.caption(f"Showing first 20 of {len(results_df)} rows")
+            if len(results_df) > 0:
+                st.dataframe(results_df.head(20), use_container_width=True)
+                if len(results_df) > 20:
+                    st.caption(f"Showing first 20 of {len(results_df)} rows")
+            else:
+                st.info("No data to preview")
             
         except Exception as e:
             st.error(f"❌ Error generating report: {e}")
