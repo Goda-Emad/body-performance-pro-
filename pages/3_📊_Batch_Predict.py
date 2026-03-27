@@ -70,7 +70,7 @@ with col_left:
     
     # نموذج البيانات المطلوبة
     st.markdown("### Required Columns")
-    required_cols = get_feature_names() + ['broad jump_cm']
+    required_cols = get_feature_names()
     
     col1, col2 = st.columns(2)
     with col1:
@@ -173,9 +173,13 @@ if uploaded_file and predict_btn:
                 st.info("Please ensure your file has all required columns. Download the sample template.")
                 st.stop()
             
-            # Preprocess
-            scaler = models['scaler']
-            X_scaled, y_true, warnings = preprocess_batch_data(df, scaler, target_column='broad jump_cm')
+            # Preprocess - تعديل: تمرير target_column بشكل صحيح
+            try:
+                X_scaled, y_true, warnings = preprocess_batch_data(df, models['scaler'], target_col='broad jump_cm')
+            except TypeError:
+                # لو الـ function مش بتقبل target_col، جرب بدونها
+                X_scaled, warnings = preprocess_batch_data(df, models['scaler'])
+                y_true = df['broad jump_cm'] if 'broad jump_cm' in df.columns else None
             
             if warnings:
                 for w in warnings:
@@ -189,15 +193,22 @@ if uploaded_file and predict_btn:
                 clf_key = clf_map[clf_model]
                 clf = models[clf_key]
                 
-                # Get predictions
-                pred_classes, probas = predict_classification(clf, X_scaled, return_proba=True)
+                # Get predictions - تعديل: handle return_proba gracefully
+                try:
+                    pred_classes, probas = predict_classification(clf, X_scaled, return_proba=True)
+                except TypeError:
+                    # لو الدالة مش بتدعم return_proba، جرب بدونها
+                    pred_classes = predict_classification(clf, X_scaled)
+                    probas = None
+                
                 results_df['predicted_class'] = pred_classes
                 
                 # Add probabilities if available
-                if probas is not None:
+                if probas is not None and len(probas) > 0:
                     class_names = ['D', 'C', 'B', 'A']
                     for i, name in enumerate(class_names):
-                        results_df[f'prob_{name}'] = probas[:, i]
+                        if i < probas.shape[1]:
+                            results_df[f'prob_{name}'] = probas[:, i]
                 
                 st.success(f"✅ Classification predictions added for {len(df)} samples")
             
@@ -233,8 +244,12 @@ if uploaded_file and predict_btn:
                 # Show results table
                 st.markdown("### Results Preview")
                 
-                # Select columns to show
-                display_cols = get_feature_names()[:5] + ['gender']
+                # ============================================
+                # التعديل المطلوب - إصلاح عرض الأعمدة
+                # ============================================
+                # عرض أول 6 أعمدة من الميزات (بدون تكرار gender)
+                display_cols = get_feature_names()[:6]
+                
                 if prediction_type in ["Classification Only", "Both"]:
                     display_cols.append('predicted_class')
                 if prediction_type in ["Regression Only", "Both"]:
@@ -250,7 +265,7 @@ if uploaded_file and predict_btn:
                 st.markdown("### 📈 Visualizations")
                 
                 # Class distribution
-                if prediction_type in ["Classification Only", "Both"]:
+                if prediction_type in ["Classification Only", "Both"] and 'predicted_class' in results_df.columns:
                     fig = px.pie(
                         results_df, 
                         names='predicted_class', 
@@ -261,7 +276,7 @@ if uploaded_file and predict_btn:
                     st.plotly_chart(fig, use_container_width=True)
                 
                 # Regression distribution
-                if prediction_type in ["Regression Only", "Both"]:
+                if prediction_type in ["Regression Only", "Both"] and 'predicted_broad_jump_cm' in results_df.columns:
                     fig = go.Figure()
                     fig.add_trace(go.Histogram(
                         x=results_df['predicted_broad_jump_cm'],
@@ -279,7 +294,7 @@ if uploaded_file and predict_btn:
                     st.plotly_chart(fig, use_container_width=True)
                 
                 # Comparison with actual if available
-                if 'broad jump_cm' in df.columns and prediction_type in ["Regression Only", "Both"]:
+                if 'broad jump_cm' in df.columns and prediction_type in ["Regression Only", "Both"] and 'predicted_broad_jump_cm' in results_df.columns:
                     st.markdown("---")
                     st.markdown("### 📊 Prediction vs Actual")
                     
@@ -331,7 +346,7 @@ if uploaded_file and predict_btn:
                 # CSV download
                 csv_output = results_df.to_csv(index=False)
                 b64_csv = base64.b64encode(csv_output.encode()).decode()
-                st.markdown(f'<a href="data:file/csv;base64,{b64_csv}" download="predictions.csv" class="stButton" style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; margin: 0.25rem;">📥 Download CSV Results</a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="data:file/csv;base64,{b64_csv}" download="predictions.csv" style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; margin: 0.25rem;">📥 Download CSV Results</a>', unsafe_allow_html=True)
                 
                 # Excel download
                 output = BytesIO()
@@ -339,7 +354,7 @@ if uploaded_file and predict_btn:
                     results_df.to_excel(writer, sheet_name='Predictions', index=False)
                 excel_data = output.getvalue()
                 b64_excel = base64.b64encode(excel_data).decode()
-                st.markdown(f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_excel}" download="predictions.xlsx" class="stButton" style="display: inline-block; padding: 0.5rem 1rem; background-color: #2c4e6e; color: white; border-radius: 8px; text-decoration: none; margin: 0.25rem;">📥 Download Excel Results</a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_excel}" download="predictions.xlsx" style="display: inline-block; padding: 0.5rem 1rem; background-color: #2c4e6e; color: white; border-radius: 8px; text-decoration: none; margin: 0.25rem;">📥 Download Excel Results</a>', unsafe_allow_html=True)
                 
                 st.markdown('</div>', unsafe_allow_html=True)
                 
