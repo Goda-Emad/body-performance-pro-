@@ -1,3 +1,4 @@
+
 """
 Page: Individual Prediction
 ---------------------------
@@ -25,7 +26,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ============================================
-# IMPORT UTILITIES (مع try-except عشان ما يوقفش)
+# IMPORT UTILITIES
 # ============================================
 try:
     from utils.model_loader import load_models
@@ -39,7 +40,6 @@ except ImportError as e:
 # LOAD CUSTOM CSS
 # ============================================
 def load_css():
-    """Load custom CSS from assets folder"""
     css_path = os.path.join('assets', 'style.css')
     if os.path.exists(css_path):
         try:
@@ -49,7 +49,6 @@ def load_css():
         except:
             pass
     else:
-        # Fallback CSS if file not found
         st.markdown("""
         <style>
         .main-header {
@@ -99,16 +98,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# STATISTICS FROM NOTEBOOK (من الـ Notebook الأصلي)
+# STATISTICS FROM NOTEBOOK (محدثة بأرقام Random Forest)
 # ============================================
 DATASET_STATS = {
     'broad_jump_mean': 190.13,
     'broad_jump_std': 39.87,
     'broad_jump_min': 71.0,
     'broad_jump_max': 303.0,
-    'accuracy_mlp': 0.7215,
-    'rmse_mlp': 18.73,
-    'r2_mlp': 0.7791
+    'accuracy_mlp': 0.7215,        # MLP للتصنيف
+    'rmse_rf': 14.0094,            # Random Forest Regressor (أفضل)
+    'r2_rf': 0.8757                # Random Forest Regressor (أفضل)
 }
 
 # ============================================
@@ -153,7 +152,6 @@ with col_input:
         flexibility = st.number_input("Sit and Bend Forward (cm)", min_value=-20, max_value=50, value=15, step=1)
         sit_ups = st.number_input("Sit-ups Count", min_value=0, max_value=100, value=40, step=1)
     
-    # Collect input data
     input_data = {
         'age': age,
         'gender': 1 if gender == "Male" else 0,
@@ -167,7 +165,6 @@ with col_input:
         'sit-ups counts': sit_ups
     }
     
-    # Data summary expander
     with st.expander("📋 Data Summary"):
         summary_df = pd.DataFrame([input_data]).T.reset_index()
         summary_df.columns = ['Feature', 'Value']
@@ -182,14 +179,37 @@ with col_input:
 # PREDICTION FUNCTIONS
 # ============================================
 def preprocess_input(input_data, scaler):
-    """Preprocess single input sample using DataFrame to keep feature names"""
-    feature_cols = [
-        'age', 'gender', 'height_cm', 'weight_kg', 'body fat_%',
-        'diastolic', 'systolic', 'gripForce', 'sit and bend forward_cm', 'sit-ups counts'
+    """Preprocess single input sample keeping EXACT Colab feature names and order"""
+    
+    colab_feature_order = [
+        'age', 
+        'height_cm', 
+        'weight kg',                 # مسافة مش شرطة
+        'body fat_%', 
+        'diastolic', 
+        'systolic', 
+        'gripForce', 
+        'sit and bend forward cm',   # مسافة مش شرطة
+        'sit-ups counts',
+        'gender_num'
     ]
-    # استخدام DataFrame بدل numpy array لتجنب مشاكل الـ Feature names في الـ Scaler
-    X_df = pd.DataFrame([{col: input_data[col] for col in feature_cols}])
+    
+    mapped_data = {
+        'age': input_data['age'],
+        'height_cm': input_data['height_cm'],
+        'weight kg': input_data['weight_kg'],
+        'body fat_%': input_data['body fat_%'],
+        'diastolic': input_data['diastolic'],
+        'systolic': input_data['systolic'],
+        'gripForce': input_data['gripForce'],
+        'sit and bend forward cm': input_data['sit and bend forward_cm'],
+        'sit-ups counts': input_data['sit-ups counts'],
+        'gender_num': input_data['gender']
+    }
+    
+    X_df = pd.DataFrame([mapped_data])[colab_feature_order]
     X_scaled = scaler.transform(X_df)
+    
     return X_scaled
 
 def get_class_description(class_label):
@@ -254,7 +274,6 @@ def predict_regression_safe(model, X_scaled):
 if predict_btn:
     with st.spinner("🔄 Making predictions..."):
         try:
-            # التحقق من وجود النماذج
             if models is None or not UTILS_AVAILABLE:
                 st.warning("⚠️ Models not loaded. Showing demo predictions based on dataset statistics.")
                 
@@ -263,7 +282,6 @@ if predict_btn:
                     st.markdown('<div class="card">', unsafe_allow_html=True)
                     st.markdown('<div class="card-title">🏆 Classification Results (Demo)</div>', unsafe_allow_html=True)
                     
-                    # Demo prediction based on flexibility
                     if flexibility > 20:
                         pred_class = 'B'
                         confidence = 0.68
@@ -310,7 +328,6 @@ if predict_btn:
                     st.markdown('<div class="card">', unsafe_allow_html=True)
                     st.markdown('<div class="card-title">📈 Regression Results (Demo)</div>', unsafe_allow_html=True)
                     
-                    # Demo prediction based on grip force and flexibility
                     pred_jump = 150 + (grip_force * 0.5) + (flexibility * 1.5)
                     pred_jump = np.clip(pred_jump, 100, 280)
                     
@@ -334,13 +351,11 @@ if predict_btn:
                 
             else:
                 # REAL PREDICTION WITH MODELS
-                # Get scaler
                 scaler = models.get('scaler')
                 if scaler is None:
                     st.error("❌ Scaler not found in models")
                     st.stop()
                 
-                # Preprocess input
                 X_scaled = preprocess_input(input_data, scaler)
                 
                 with col_results:
@@ -348,52 +363,39 @@ if predict_btn:
                     st.markdown('<div class="card">', unsafe_allow_html=True)
                     st.markdown('<div class="card-title">🏆 Classification Results</div>', unsafe_allow_html=True)
                     
-                    # Best classifier (MLP)
                     mlp_model = models.get('mlp')
-                    
-                    # حل المشكلة الأولى: التعامل الآمن مع Probabilities
                     pred_out = None
                     proba = None
                     
                     if mlp_model is not None:
                         try:
-                            # محاولة استخدام الدالة مع return_proba
                             pred_out, proba = predict_classification(mlp_model, X_scaled, return_proba=True)
                         except TypeError:
-                            # لو الدالة مش بتدعم return_proba
                             pred_out = predict_classification(mlp_model, X_scaled)
-                            # محاولة استخراج الاحتمالات لو الموديل بيدعمها
                             if hasattr(mlp_model, "predict_proba"):
                                 proba = mlp_model.predict_proba(X_scaled)
                         except Exception as e:
                             st.warning(f"Prediction warning: {e}")
-                            # محاولة مباشرة
                             if hasattr(mlp_model, "predict"):
                                 pred_out = mlp_model.predict(X_scaled)
                                 if hasattr(mlp_model, "predict_proba"):
                                     proba = mlp_model.predict_proba(X_scaled)
                     
-                    # إذا فشل كل شيء، استخدم قيمة افتراضية
                     if pred_out is None:
-                        pred_out = [0]  # افتراضي D
+                        pred_out = [0]
                         proba = None
                     
                     confidence = np.max(proba) if proba is not None else None
                     
-                    # حل المشكلة الثانية: تحويل الرقم لحرف
                     class_map = {3: 'A', 2: 'B', 1: 'C', 0: 'D'}
-                    
-                    # التحقق هل النتيجة رقم ولا حرف، وتحويلها لو رقم
                     raw_pred = pred_out[0]
                     if isinstance(raw_pred, (int, np.integer, float, np.floating)):
                         final_class = class_map.get(int(raw_pred), 'D')
                     else:
-                        final_class = str(raw_pred).upper()  # لو هي أصلاً حرف
+                        final_class = str(raw_pred).upper()
                     
-                    # Get class description
                     class_desc = get_class_description(final_class)
                     
-                    # Display class result
                     col_a, col_b, col_c = st.columns(3)
                     with col_a:
                         st.markdown(f"""
@@ -421,15 +423,7 @@ if predict_btn:
                                 <div style="font-size: 0.7rem; color: #94a3b8;">(MLP Accuracy: {DATASET_STATS['accuracy_mlp']:.1%})</div>
                             </div>
                             """, unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""
-                            <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
-                                <div style="font-size: 1.2rem; font-weight: bold; color: #1e3a5f;">MLP</div>
-                                <div style="font-size: 0.8rem; color: #64748b;">Accuracy: {DATASET_STATS['accuracy_mlp']:.1%}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
                     
-                    # Probability distribution chart
                     if proba is not None and len(proba) > 0:
                         st.markdown("---")
                         st.markdown("**Probability Distribution Across Classes**")
@@ -458,39 +452,50 @@ if predict_btn:
                     st.markdown(f"**Recommendation:** {class_desc['recommendation']}")
                     st.markdown('</div>', unsafe_allow_html=True)
                     
-                    # ========== REGRESSION RESULTS ==========
+                    # ========== REGRESSION RESULTS (باستخدام Random Forest) ==========
                     st.markdown('<div class="card">', unsafe_allow_html=True)
-                    st.markdown('<div class="card-title">📈 Regression Results</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="card-title">📈 Regression Results (Random Forest)</div>', unsafe_allow_html=True)
                     
-                    # Best regressor (MLP Regressor)
-                    mlp_reg = models.get('mlp_regressor')
-                    if mlp_reg is not None:
-                        pred_value = predict_regression_safe(mlp_reg, X_scaled)
+                    # ✅ التعديل المهم: استخدام Random Forest Regressor بدل MLP
+                    rf_reg = models.get('rf_regressor')  # أو الاسم اللي عندك في load_models
+                    
+                    if rf_reg is not None:
+                        pred_value = predict_regression_safe(rf_reg, X_scaled)
                         predicted_jump = pred_value[0] if len(pred_value) > 0 else DATASET_STATS['broad_jump_mean']
+                        model_used = "Random Forest"
                     else:
-                        predicted_jump = DATASET_STATS['broad_jump_mean']
+                        # Fallback: حاول تجيب mlp_regressor لو rf_reg مش موجود
+                        mlp_reg = models.get('mlp_regressor')
+                        if mlp_reg is not None:
+                            pred_value = predict_regression_safe(mlp_reg, X_scaled)
+                            predicted_jump = pred_value[0] if len(pred_value) > 0 else DATASET_STATS['broad_jump_mean']
+                            model_used = "MLP (Fallback)"
+                            st.warning("⚠️ Random Forest model not found, using MLP Regressor as fallback.")
+                        else:
+                            predicted_jump = DATASET_STATS['broad_jump_mean']
+                            model_used = "Dataset Average"
+                            st.warning("⚠️ No regression model found, showing dataset average.")
                     
-                    # Display regression result
                     col1, col2 = st.columns(2)
                     with col1:
                         st.markdown(f"""
                         <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
                             <div style="font-size: 2rem; font-weight: bold; color: #1e3a5f;">{predicted_jump:.1f}</div>
                             <div style="font-size: 0.8rem; color: #64748b;">Predicted Broad Jump (cm)</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">Model: {model_used}</div>
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # Compare with dataset average
                     avg_jump = DATASET_STATS['broad_jump_mean']
                     diff = predicted_jump - avg_jump
                     with col2:
                         st.metric("Dataset Average", f"{avg_jump:.1f} cm", delta=f"{diff:+.1f} cm")
                     
-                    # Dynamic interpretation
                     interpretation = get_regression_interpretation(predicted_jump)
-                    
                     st.markdown(f"**Interpretation:** {interpretation}")
-                    st.markdown(f"**Model Performance:** RMSE = {DATASET_STATS['rmse_mlp']:.2f} cm, R² = {DATASET_STATS['r2_mlp']:.4f}")
+                    
+                    # عرض أداء النموذج من الـ Notebook
+                    st.markdown(f"**Model Performance (Random Forest):** RMSE = **{DATASET_STATS['rmse_rf']:.2f} cm**, R² = **{DATASET_STATS['r2_rf']:.4f}**")
                     st.markdown('</div>', unsafe_allow_html=True)
                 
         except Exception as e:
@@ -511,14 +516,15 @@ with st.sidebar:
     - **C** - Average
     - **D (Worst)** - Below average
     
-    **Regression**
+    **Regression (Random Forest)**
     - Predicts **broad jump distance** in cm
-    - Range: 71 - 303 cm
+    - **R² = 0.8757** (Explains 87.6% of variance)
+    - **RMSE = 14.0 cm** (High accuracy)
     
     ---
     ### 🏆 Best Models
     - **Classification:** MLP Neural Network (72.15% accuracy)
-    - **Regression:** MLP Regressor (R² = 0.7791, RMSE = 18.73 cm)
+    - **Regression:** Random Forest Regressor (R² = 0.8757)
     
     ---
     ### 📊 Key Predictors
