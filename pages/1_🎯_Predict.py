@@ -182,13 +182,14 @@ with col_input:
 # PREDICTION FUNCTIONS
 # ============================================
 def preprocess_input(input_data, scaler):
-    """Preprocess single input sample"""
+    """Preprocess single input sample using DataFrame to keep feature names"""
     feature_cols = [
         'age', 'gender', 'height_cm', 'weight_kg', 'body fat_%',
         'diastolic', 'systolic', 'gripForce', 'sit and bend forward_cm', 'sit-ups counts'
     ]
-    X = np.array([[input_data[col] for col in feature_cols]])
-    X_scaled = scaler.transform(X)
+    # استخدام DataFrame بدل numpy array لتجنب مشاكل الـ Feature names في الـ Scaler
+    X_df = pd.DataFrame([{col: input_data[col] for col in feature_cols}])
+    X_scaled = scaler.transform(X_df)
     return X_scaled
 
 def get_class_description(class_label):
@@ -246,20 +247,6 @@ def predict_regression_safe(model, X_scaled):
     except Exception as e:
         st.warning(f"Regression prediction error: {e}")
         return np.array([DATASET_STATS['broad_jump_mean']])
-
-def predict_classification_safe(model, X_scaled):
-    """Safe prediction function for classification"""
-    try:
-        if hasattr(model, 'predict_proba'):
-            proba = model.predict_proba(X_scaled)
-            pred_class = model.predict(X_scaled)
-            return pred_class, proba
-        else:
-            pred_class = model.predict(X_scaled)
-            return pred_class, None
-    except Exception as e:
-        st.warning(f"Classification prediction error: {e}")
-        return np.array(['B']), None
 
 # ============================================
 # MAKE PREDICTION
@@ -363,17 +350,48 @@ if predict_btn:
                     
                     # Best classifier (MLP)
                     mlp_model = models.get('mlp')
+                    
+                    # حل المشكلة الأولى: التعامل الآمن مع Probabilities
+                    pred_out = None
+                    proba = None
+                    
                     if mlp_model is not None:
-                        pred_class, proba = predict_classification_safe(mlp_model, X_scaled)
-                        confidence = np.max(proba) if proba is not None else None
-                        predicted_class = pred_class[0] if len(pred_class) > 0 else 'B'
-                    else:
-                        predicted_class = 'B'
-                        confidence = None
+                        try:
+                            # محاولة استخدام الدالة مع return_proba
+                            pred_out, proba = predict_classification(mlp_model, X_scaled, return_proba=True)
+                        except TypeError:
+                            # لو الدالة مش بتدعم return_proba
+                            pred_out = predict_classification(mlp_model, X_scaled)
+                            # محاولة استخراج الاحتمالات لو الموديل بيدعمها
+                            if hasattr(mlp_model, "predict_proba"):
+                                proba = mlp_model.predict_proba(X_scaled)
+                        except Exception as e:
+                            st.warning(f"Prediction warning: {e}")
+                            # محاولة مباشرة
+                            if hasattr(mlp_model, "predict"):
+                                pred_out = mlp_model.predict(X_scaled)
+                                if hasattr(mlp_model, "predict_proba"):
+                                    proba = mlp_model.predict_proba(X_scaled)
+                    
+                    # إذا فشل كل شيء، استخدم قيمة افتراضية
+                    if pred_out is None:
+                        pred_out = [0]  # افتراضي D
                         proba = None
                     
+                    confidence = np.max(proba) if proba is not None else None
+                    
+                    # حل المشكلة الثانية: تحويل الرقم لحرف
+                    class_map = {3: 'A', 2: 'B', 1: 'C', 0: 'D'}
+                    
+                    # التحقق هل النتيجة رقم ولا حرف، وتحويلها لو رقم
+                    raw_pred = pred_out[0]
+                    if isinstance(raw_pred, (int, np.integer, float, np.floating)):
+                        final_class = class_map.get(int(raw_pred), 'D')
+                    else:
+                        final_class = str(raw_pred).upper()  # لو هي أصلاً حرف
+                    
                     # Get class description
-                    class_desc = get_class_description(predicted_class)
+                    class_desc = get_class_description(final_class)
                     
                     # Display class result
                     col_a, col_b, col_c = st.columns(3)
@@ -381,7 +399,7 @@ if predict_btn:
                         st.markdown(f"""
                         <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, {class_desc['color']}20 0%, white 100%); border-radius: 15px;">
                             <div style="font-size: 3rem;">{class_desc['icon']}</div>
-                            <div style="font-size: 2rem; font-weight: bold; color: {class_desc['color']};">{predicted_class}</div>
+                            <div style="font-size: 2rem; font-weight: bold; color: {class_desc['color']};">{final_class}</div>
                             <div style="font-size: 0.9rem; color: #64748b;">Predicted Class</div>
                         </div>
                         """, unsafe_allow_html=True)
@@ -406,7 +424,7 @@ if predict_btn:
                         else:
                             st.markdown(f"""
                             <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
-                                <div style="font-size: 1rem; font-weight: bold; color: #1e3a5f;">MLP Model</div>
+                                <div style="font-size: 1.2rem; font-weight: bold; color: #1e3a5f;">MLP</div>
                                 <div style="font-size: 0.8rem; color: #64748b;">Accuracy: {DATASET_STATS['accuracy_mlp']:.1%}</div>
                             </div>
                             """, unsafe_allow_html=True)
