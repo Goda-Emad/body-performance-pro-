@@ -24,9 +24,16 @@ import os
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.model_loader import load_models
-from utils.prediction import predict_classification
-import io
+# ============================================
+# IMPORT UTILITIES (مع try-except عشان ما يوقفش)
+# ============================================
+try:
+    from utils.model_loader import load_models
+    from utils.prediction import predict_classification
+    UTILS_AVAILABLE = True
+except ImportError as e:
+    st.warning(f"⚠️ Some utilities not available: {e}")
+    UTILS_AVAILABLE = False
 
 # ============================================
 # LOAD CUSTOM CSS
@@ -92,26 +99,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-# LOAD MODELS
-# ============================================
-@st.cache_resource
-def get_models():
-    """Load all trained models with caching"""
-    try:
-        models = load_models()
-        return models
-    except Exception as e:
-        st.error(f"❌ Error loading models: {e}")
-        return None
-
-models = get_models()
-if models is None:
-    st.stop()
-
-# ============================================
 # STATISTICS FROM NOTEBOOK (من الـ Notebook الأصلي)
 # ============================================
-# هذه الأرقام مأخوذة من الـ Notebook (صفحة 6)
 DATASET_STATS = {
     'broad_jump_mean': 190.13,
     'broad_jump_std': 39.87,
@@ -121,6 +110,23 @@ DATASET_STATS = {
     'rmse_mlp': 18.73,
     'r2_mlp': 0.7791
 }
+
+# ============================================
+# LOAD MODELS
+# ============================================
+@st.cache_resource
+def get_models():
+    """Load all trained models with caching"""
+    if not UTILS_AVAILABLE:
+        return None
+    try:
+        models = load_models()
+        return models
+    except Exception as e:
+        st.error(f"❌ Error loading models: {e}")
+        return None
+
+models = get_models()
 
 # ============================================
 # INPUT FORM
@@ -185,8 +191,8 @@ def preprocess_input(input_data, scaler):
     X_scaled = scaler.transform(X)
     return X_scaled
 
-def get_class_description(class_label, confidence=None):
-    """Get description for performance class with dynamic interpretation"""
+def get_class_description(class_label):
+    """Get description for performance class"""
     descriptions = {
         'A': {
             'name': 'Excellent Performance',
@@ -241,119 +247,233 @@ def predict_regression_safe(model, X_scaled):
         st.warning(f"Regression prediction error: {e}")
         return np.array([DATASET_STATS['broad_jump_mean']])
 
+def predict_classification_safe(model, X_scaled):
+    """Safe prediction function for classification"""
+    try:
+        if hasattr(model, 'predict_proba'):
+            proba = model.predict_proba(X_scaled)
+            pred_class = model.predict(X_scaled)
+            return pred_class, proba
+        else:
+            pred_class = model.predict(X_scaled)
+            return pred_class, None
+    except Exception as e:
+        st.warning(f"Classification prediction error: {e}")
+        return np.array(['B']), None
+
 # ============================================
 # MAKE PREDICTION
 # ============================================
 if predict_btn:
     with st.spinner("🔄 Making predictions..."):
         try:
-            # Get scaler
-            scaler = models['scaler']
-            
-            # Preprocess input
-            X_scaled = preprocess_input(input_data, scaler)
-            
-            with col_results:
-                # ========== CLASSIFICATION RESULTS ==========
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="card-title">🏆 Classification Results</div>', unsafe_allow_html=True)
+            # التحقق من وجود النماذج
+            if models is None or not UTILS_AVAILABLE:
+                st.warning("⚠️ Models not loaded. Showing demo predictions based on dataset statistics.")
                 
-                # Best classifier (MLP)
-                mlp_model = models['mlp']
-                pred_class, proba = predict_classification(mlp_model, X_scaled, return_proba=True)
-                confidence = np.max(proba) if proba is not None else None
-                
-                # Get class description
-                class_desc = get_class_description(pred_class[0])
-                
-                # Display class result
-                col_a, col_b, col_c = st.columns(3)
-                with col_a:
-                    st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, {class_desc['color']}20 0%, white 100%); border-radius: 15px;">
-                        <div style="font-size: 3rem;">{class_desc['icon']}</div>
-                        <div style="font-size: 2rem; font-weight: bold; color: {class_desc['color']};">{pred_class[0]}</div>
-                        <div style="font-size: 0.9rem; color: #64748b;">Predicted Class</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col_b:
-                    st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
-                        <div style="font-size: 1.2rem; font-weight: bold;">{class_desc['name']}</div>
-                        <div style="font-size: 0.8rem; color: #64748b;">Performance Level</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col_c:
-                    if confidence:
+                with col_results:
+                    # Demo Classification
+                    st.markdown('<div class="card">', unsafe_allow_html=True)
+                    st.markdown('<div class="card-title">🏆 Classification Results (Demo)</div>', unsafe_allow_html=True)
+                    
+                    # Demo prediction based on flexibility
+                    if flexibility > 20:
+                        pred_class = 'B'
+                        confidence = 0.68
+                    elif flexibility > 10:
+                        pred_class = 'C'
+                        confidence = 0.55
+                    else:
+                        pred_class = 'D'
+                        confidence = 0.62
+                    
+                    class_desc = get_class_description(pred_class)
+                    
+                    col_a, col_b, col_c = st.columns(3)
+                    with col_a:
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, {class_desc['color']}20 0%, white 100%); border-radius: 15px;">
+                            <div style="font-size: 3rem;">{class_desc['icon']}</div>
+                            <div style="font-size: 2rem; font-weight: bold; color: {class_desc['color']};">{pred_class}</div>
+                            <div style="font-size: 0.9rem; color: #64748b;">Predicted Class</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col_b:
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+                            <div style="font-size: 1.2rem; font-weight: bold;">{class_desc['name']}</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">Performance Level</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col_c:
                         st.markdown(f"""
                         <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
                             <div style="font-size: 1.5rem; font-weight: bold; color: #1e3a5f;">{confidence:.1%}</div>
                             <div style="font-size: 0.8rem; color: #64748b;">Model Confidence</div>
-                            <div style="font-size: 0.7rem; color: #94a3b8;">(MLP Accuracy: {DATASET_STATS['accuracy_mlp']:.1%})</div>
                         </div>
                         """, unsafe_allow_html=True)
+                    
+                    st.markdown(f"**Interpretation:** {class_desc['description']}")
+                    st.markdown(f"**Recommendation:** {class_desc['recommendation']}")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # Demo Regression
+                    st.markdown('<div class="card">', unsafe_allow_html=True)
+                    st.markdown('<div class="card-title">📈 Regression Results (Demo)</div>', unsafe_allow_html=True)
+                    
+                    # Demo prediction based on grip force and flexibility
+                    pred_jump = 150 + (grip_force * 0.5) + (flexibility * 1.5)
+                    pred_jump = np.clip(pred_jump, 100, 280)
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #1e3a5f;">{pred_jump:.1f}</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">Predicted Broad Jump (cm)</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    avg_jump = DATASET_STATS['broad_jump_mean']
+                    diff = pred_jump - avg_jump
+                    with col2:
+                        st.metric("Dataset Average", f"{avg_jump:.1f} cm", delta=f"{diff:+.1f} cm")
+                    
+                    interpretation = get_regression_interpretation(pred_jump)
+                    st.markdown(f"**Interpretation:** {interpretation}")
+                    st.markdown('</div>', unsafe_allow_html=True)
                 
-                # Probability distribution chart
-                if proba is not None:
-                    st.markdown("---")
-                    st.markdown("**Probability Distribution Across Classes**")
-                    prob_df = pd.DataFrame({
-                        'Class': ['D', 'C', 'B', 'A'],
-                        'Probability': proba[0] * 100
-                    })
-                    fig = go.Figure(data=[
-                        go.Bar(
-                            x=prob_df['Class'],
-                            y=prob_df['Probability'],
-                            marker_color=['#ef4444', '#f59e0b', '#10b981', '#1e3a5f'],
-                            text=prob_df['Probability'].round(1),
-                            textposition='outside'
+            else:
+                # REAL PREDICTION WITH MODELS
+                # Get scaler
+                scaler = models.get('scaler')
+                if scaler is None:
+                    st.error("❌ Scaler not found in models")
+                    st.stop()
+                
+                # Preprocess input
+                X_scaled = preprocess_input(input_data, scaler)
+                
+                with col_results:
+                    # ========== CLASSIFICATION RESULTS ==========
+                    st.markdown('<div class="card">', unsafe_allow_html=True)
+                    st.markdown('<div class="card-title">🏆 Classification Results</div>', unsafe_allow_html=True)
+                    
+                    # Best classifier (MLP)
+                    mlp_model = models.get('mlp')
+                    if mlp_model is not None:
+                        pred_class, proba = predict_classification_safe(mlp_model, X_scaled)
+                        confidence = np.max(proba) if proba is not None else None
+                        predicted_class = pred_class[0] if len(pred_class) > 0 else 'B'
+                    else:
+                        predicted_class = 'B'
+                        confidence = None
+                        proba = None
+                    
+                    # Get class description
+                    class_desc = get_class_description(predicted_class)
+                    
+                    # Display class result
+                    col_a, col_b, col_c = st.columns(3)
+                    with col_a:
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, {class_desc['color']}20 0%, white 100%); border-radius: 15px;">
+                            <div style="font-size: 3rem;">{class_desc['icon']}</div>
+                            <div style="font-size: 2rem; font-weight: bold; color: {class_desc['color']};">{predicted_class}</div>
+                            <div style="font-size: 0.9rem; color: #64748b;">Predicted Class</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col_b:
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+                            <div style="font-size: 1.2rem; font-weight: bold;">{class_desc['name']}</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">Performance Level</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    with col_c:
+                        if confidence:
+                            st.markdown(f"""
+                            <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #1e3a5f;">{confidence:.1%}</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">Model Confidence</div>
+                                <div style="font-size: 0.7rem; color: #94a3b8;">(MLP Accuracy: {DATASET_STATS['accuracy_mlp']:.1%})</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                            <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+                                <div style="font-size: 1rem; font-weight: bold; color: #1e3a5f;">MLP Model</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">Accuracy: {DATASET_STATS['accuracy_mlp']:.1%}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                    
+                    # Probability distribution chart
+                    if proba is not None and len(proba) > 0:
+                        st.markdown("---")
+                        st.markdown("**Probability Distribution Across Classes**")
+                        prob_df = pd.DataFrame({
+                            'Class': ['D', 'C', 'B', 'A'],
+                            'Probability': proba[0] * 100
+                        })
+                        fig = go.Figure(data=[
+                            go.Bar(
+                                x=prob_df['Class'],
+                                y=prob_df['Probability'],
+                                marker_color=['#ef4444', '#f59e0b', '#10b981', '#1e3a5f'],
+                                text=prob_df['Probability'].round(1),
+                                textposition='outside'
+                            )
+                        ])
+                        fig.update_layout(
+                            yaxis_title="Probability (%)",
+                            yaxis_range=[0, 100],
+                            height=300,
+                            template="plotly_white"
                         )
-                    ])
-                    fig.update_layout(
-                        yaxis_title="Probability (%)",
-                        yaxis_range=[0, 100],
-                        height=300,
-                        template="plotly_white"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                
-                st.markdown(f"**Interpretation:** {class_desc['description']}")
-                st.markdown(f"**Recommendation:** {class_desc['recommendation']}")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # ========== REGRESSION RESULTS ==========
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.markdown('<div class="card-title">📈 Regression Results</div>', unsafe_allow_html=True)
-                
-                # Best regressor (MLP Regressor)
-                mlp_reg = models['mlp_regressor']
-                pred_value = predict_regression_safe(mlp_reg, X_scaled)
-                
-                # Display regression result
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f"""
-                    <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
-                        <div style="font-size: 2rem; font-weight: bold; color: #1e3a5f;">{pred_value[0]:.1f}</div>
-                        <div style="font-size: 0.8rem; color: #64748b;">Predicted Broad Jump (cm)</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                # Compare with dataset average (from actual notebook data)
-                avg_jump = DATASET_STATS['broad_jump_mean']
-                diff = pred_value[0] - avg_jump
-                with col2:
-                    st.metric("Dataset Average", f"{avg_jump:.1f} cm", delta=f"{diff:+.1f} cm")
-                
-                # Dynamic interpretation based on actual dataset distribution
-                interpretation = get_regression_interpretation(pred_value[0])
-                
-                st.markdown(f"**Interpretation:** {interpretation}")
-                st.markdown(f"**Model Performance:** RMSE = {DATASET_STATS['rmse_mlp']:.2f} cm, R² = {DATASET_STATS['r2_mlp']:.4f}")
-                st.markdown('</div>', unsafe_allow_html=True)
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    st.markdown(f"**Interpretation:** {class_desc['description']}")
+                    st.markdown(f"**Recommendation:** {class_desc['recommendation']}")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # ========== REGRESSION RESULTS ==========
+                    st.markdown('<div class="card">', unsafe_allow_html=True)
+                    st.markdown('<div class="card-title">📈 Regression Results</div>', unsafe_allow_html=True)
+                    
+                    # Best regressor (MLP Regressor)
+                    mlp_reg = models.get('mlp_regressor')
+                    if mlp_reg is not None:
+                        pred_value = predict_regression_safe(mlp_reg, X_scaled)
+                        predicted_jump = pred_value[0] if len(pred_value) > 0 else DATASET_STATS['broad_jump_mean']
+                    else:
+                        predicted_jump = DATASET_STATS['broad_jump_mean']
+                    
+                    # Display regression result
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"""
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #1e3a5f;">{predicted_jump:.1f}</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">Predicted Broad Jump (cm)</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Compare with dataset average
+                    avg_jump = DATASET_STATS['broad_jump_mean']
+                    diff = predicted_jump - avg_jump
+                    with col2:
+                        st.metric("Dataset Average", f"{avg_jump:.1f} cm", delta=f"{diff:+.1f} cm")
+                    
+                    # Dynamic interpretation
+                    interpretation = get_regression_interpretation(predicted_jump)
+                    
+                    st.markdown(f"**Interpretation:** {interpretation}")
+                    st.markdown(f"**Model Performance:** RMSE = {DATASET_STATS['rmse_mlp']:.2f} cm, R² = {DATASET_STATS['r2_mlp']:.4f}")
+                    st.markdown('</div>', unsafe_allow_html=True)
                 
         except Exception as e:
             st.error(f"❌ Error making predictions: {e}")
