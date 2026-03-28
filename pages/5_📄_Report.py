@@ -2,6 +2,7 @@
 Page: Generate Report
 -------------------------------------------
 Generate comprehensive reports with analysis and predictions.
+Now with real ML model integration and statistical analysis.
 """
 
 import streamlit as st
@@ -13,6 +14,9 @@ from datetime import datetime
 import base64
 import io
 import time
+import matplotlib.pyplot as plt
+import seaborn as sns
+from io import BytesIO
 
 # إعدادات الصفحة
 st.set_page_config(
@@ -40,7 +44,50 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# بيانات النماذج (من نتائج التدريب)
+# ============================================
+# تحميل النماذج الحقيقية
+# ============================================
+@st.cache_resource
+def load_models():
+    """Load trained models from models folder"""
+    try:
+        import joblib
+        import os
+        
+        models_dir = 'models'
+        models = {}
+        
+        # Load classification models
+        model_files = {
+            'knn': 'knn_model.pkl',
+            'dt': 'dt_model.pkl',
+            'svm_linear': 'svm_linear.pkl',
+            'svm_rbf': 'svm_rbf.pkl',
+            'mlp': 'mlp_classifier.pkl',
+            'scaler': 'scaler.pkl',
+            'linear_regression': 'linear_regression.pkl',
+            'dt_regressor': 'dt_regressor.pkl',
+            'svr': 'svr_model.pkl',
+            'mlp_regressor': 'mlp_regressor.pkl'
+        }
+        
+        for key, filename in model_files.items():
+            path = os.path.join(models_dir, filename)
+            if os.path.exists(path):
+                models[key] = joblib.load(path)
+        
+        return models if models else None
+    except Exception as e:
+        st.warning(f"Could not load models: {e}")
+        return None
+
+# محاولة تحميل النماذج
+models = load_models()
+
+# إذا لم توجد نماذج، استخدم البيانات الثابتة كـ fallback
+USE_REAL_MODELS = models is not None
+
+# بيانات النماذج (نتائج التدريب الحقيقية - يمكن تحديثها من ملف)
 CLASSIFICATION_RESULTS = {
     'KNN (k=9)': {'Accuracy': 0.6316, 'Precision': 0.6510, 'Recall': 0.6316, 'F1 Score': 0.6352},
     'Decision Tree': {'Accuracy': 0.6745, 'Precision': 0.6945, 'Recall': 0.6745, 'F1 Score': 0.6746},
@@ -56,7 +103,80 @@ REGRESSION_RESULTS = {
     'MLP Regressor': {'R²': 0.7791, 'RMSE': 18.73, 'MAE': 14.72, 'MSE': 350.8}
 }
 
+# ============================================
+# دوال التحليل الإحصائي
+# ============================================
+def generate_statistical_report(df):
+    """Generate statistical analysis from dataframe"""
+    report = {}
+    
+    # Basic info
+    report['total_records'] = len(df)
+    report['total_columns'] = len(df.columns)
+    
+    # Numerical columns analysis
+    num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    if num_cols:
+        report['numerical_stats'] = df[num_cols].describe().to_dict()
+    
+    # Categorical columns analysis
+    cat_cols = df.select_dtypes(include=['object']).columns.tolist()
+    if cat_cols:
+        report['categorical_stats'] = {}
+        for col in cat_cols:
+            report['categorical_stats'][col] = df[col].value_counts().to_dict()
+    
+    # Gender distribution if exists
+    if 'gender' in df.columns:
+        gender_counts = df['gender'].value_counts()
+        report['gender_distribution'] = {
+            'Male': int(gender_counts.get('M', gender_counts.get('Male', 0))),
+            'Female': int(gender_counts.get('F', gender_counts.get('Female', 0)))
+        }
+    
+    # Class distribution if exists
+    if 'class' in df.columns:
+        report['class_distribution'] = df['class'].value_counts().to_dict()
+    if 'predicted_class' in df.columns:
+        report['predicted_class_distribution'] = df['predicted_class'].value_counts().to_dict()
+    
+    # Age statistics if exists
+    if 'age' in df.columns:
+        report['age_stats'] = {
+            'mean': df['age'].mean(),
+            'median': df['age'].median(),
+            'min': df['age'].min(),
+            'max': df['age'].max(),
+            'std': df['age'].std()
+        }
+    
+    # Body fat statistics if exists
+    if 'body fat_%' in df.columns:
+        report['body_fat_stats'] = {
+            'mean': df['body fat_%'].mean(),
+            'median': df['body fat_%'].median(),
+            'min': df['body fat_%'].min(),
+            'max': df['body fat_%'].max()
+        }
+    
+    # Prediction accuracy if both actual and predicted exist
+    if 'broad jump_cm' in df.columns and 'predicted_broad_jump_cm' in df.columns:
+        errors = df['broad jump_cm'] - df['predicted_broad_jump_cm']
+        report['regression_metrics'] = {
+            'MAE': errors.abs().mean(),
+            'RMSE': np.sqrt((errors**2).mean()),
+            'MAPE': (errors.abs() / df['broad jump_cm']).mean() * 100
+        }
+    
+    if 'class' in df.columns and 'predicted_class' in df.columns:
+        from sklearn.metrics import accuracy_score
+        report['classification_accuracy'] = accuracy_score(df['class'], df['predicted_class'])
+    
+    return report
+
+# ============================================
 # تقسيم الصفحة
+# ============================================
 col1, col2 = st.columns([1, 1], gap="large")
 
 with col1:
@@ -105,27 +225,59 @@ with col1:
             'Sit-ups Count': sit_ups
         }
         
-        # Manual prediction input
-        pred_class = st.selectbox("Predicted Class (for report)", ["A (Best)", "B", "C", "D (Worst)"])
-        pred_jump = st.number_input("Predicted Broad Jump (cm)", min_value=50.0, max_value=350.0, value=190.0)
-        
-        predictions = {
-            'classification': {
-                'predicted_class': pred_class[0],
-                'confidence': 0.72
-            },
-            'regression': {
-                'predicted_value': pred_jump
-            }
-        }
+        # ============================================
+        # استخدام النماذج الحقيقية للتنبؤ (إذا وجدت)
+        # ============================================
+        if USE_REAL_MODELS and models:
+            try:
+                # Prepare input for model
+                import numpy as np
+                
+                # Convert gender to numeric
+                gender_num = 1 if gender == "Male" else 0
+                
+                # Create feature array
+                features = np.array([[
+                    age, gender_num, height, weight, body_fat,
+                    diastolic, systolic, grip_force, flexibility, sit_ups
+                ]])
+                
+                # Scale features
+                if 'scaler' in models:
+                    features_scaled = models['scaler'].transform(features)
+                else:
+                    features_scaled = features
+                
+                # Classification prediction
+                if 'mlp' in models:
+                    pred_class_num = models['mlp'].predict(features_scaled)[0]
+                    class_map = {0: 'D', 1: 'C', 2: 'B', 3: 'A'}
+                    pred_class = f"{class_map.get(pred_class_num, 'D')} (Best)" if pred_class_num == 3 else class_map.get(pred_class_num, 'D')
+                else:
+                    pred_class = "B"
+                
+                # Regression prediction
+                if 'mlp_regressor' in models:
+                    pred_jump = models['mlp_regressor'].predict(features_scaled)[0]
+                else:
+                    pred_jump = 190.0
+                    
+            except Exception as e:
+                st.warning(f"Model prediction failed, using demo values: {e}")
+                pred_class = "B"
+                pred_jump = 190.0
+        else:
+            # Demo values if no models
+            pred_class = st.selectbox("Predicted Class (for report)", ["A (Best)", "B", "C", "D (Worst)"])
+            pred_jump = st.number_input("Predicted Broad Jump (cm)", min_value=50.0, max_value=350.0, value=190.0)
         
     elif report_type == "Batch Summary Report":
         st.markdown("### 📁 Batch Data Upload")
         
         uploaded_file = st.file_uploader(
-            "Upload CSV file with predictions",
+            "Upload CSV file for statistical analysis",
             type=['csv', 'xlsx'],
-            help="Upload a file with prediction results"
+            help="Upload any CSV file - the system will generate statistical report"
         )
         
         if uploaded_file:
@@ -134,11 +286,16 @@ with col1:
             else:
                 batch_df = pd.read_excel(uploaded_file)
             
-            st.success(f"✅ Loaded {len(batch_df)} rows")
+            st.success(f"✅ Loaded {len(batch_df)} rows, {len(batch_df.columns)} columns")
             st.dataframe(batch_df.head(5), use_container_width=True)
             
-            predictions = None
-            input_data = {}
+            # Generate statistical report immediately
+            with st.spinner("Generating statistical analysis..."):
+                stats_report = generate_statistical_report(batch_df)
+                st.session_state['stats_report'] = stats_report
+                st.session_state['batch_df'] = batch_df
+            
+            st.info("✅ Statistical analysis ready! Click 'Generate Report' to download.")
     
     else:  # Full Analysis Report
         st.markdown("### 📊 Report Options")
@@ -147,9 +304,6 @@ with col1:
         include_regression = st.checkbox("Include Regression Results", value=True)
         include_cv = st.checkbox("Include Cross Validation", value=True)
         include_recommendations = st.checkbox("Include Recommendations", value=True)
-        
-        predictions = None
-        input_data = {}
     
     st.markdown("---")
     
@@ -166,14 +320,17 @@ with col1:
     
     # Generate button
     generate_btn = st.button("📊 Generate Report", type="primary", use_container_width=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
+# ============================================
+# Preview Column
+# ============================================
 with col2:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">📄 Report Preview</div>', unsafe_allow_html=True)
     
-    # Preview content
     st.markdown("### 📋 Report Summary")
-    
     st.markdown(f"""
     **Report Type:** {report_type}
     **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
@@ -190,12 +347,55 @@ with col2:
         st.markdown(f"- **Predicted Broad Jump:** {pred_jump:.1f} cm")
     
     elif report_type == "Batch Summary Report" and 'batch_df' in locals():
-        st.markdown("#### Batch Summary")
-        st.metric("Total Records", len(batch_df))
-        if 'predicted_class' in batch_df.columns:
-            st.metric("Classes", batch_df['predicted_class'].nunique())
-        if 'predicted_broad_jump_cm' in batch_df.columns:
-            st.metric("Avg Jump", f"{batch_df['predicted_broad_jump_cm'].mean():.1f} cm")
+        st.markdown("#### 📊 Statistical Analysis")
+        
+        stats_report = st.session_state.get('stats_report', {})
+        
+        if stats_report:
+            # Key metrics in columns
+            col_m1, col_m2, col_m3 = st.columns(3)
+            with col_m1:
+                st.metric("Total Records", stats_report.get('total_records', 0))
+            with col_m2:
+                st.metric("Total Columns", stats_report.get('total_columns', 0))
+            if 'classification_accuracy' in stats_report:
+                with col_m3:
+                    st.metric("Classification Accuracy", f"{stats_report['classification_accuracy']:.1%}")
+            
+            # Gender distribution
+            if 'gender_distribution' in stats_report:
+                st.markdown("#### 👥 Gender Distribution")
+                gender_data = stats_report['gender_distribution']
+                st.dataframe(pd.DataFrame(gender_data.items(), columns=['Gender', 'Count']), use_container_width=True)
+            
+            # Age statistics
+            if 'age_stats' in stats_report:
+                st.markdown("#### 📊 Age Statistics")
+                age_stats = stats_report['age_stats']
+                age_df = pd.DataFrame(age_stats.items(), columns=['Metric', 'Value'])
+                st.dataframe(age_df, use_container_width=True)
+            
+            # Body fat statistics
+            if 'body_fat_stats' in stats_report:
+                st.markdown("#### ⚖️ Body Fat Statistics")
+                bf_stats = stats_report['body_fat_stats']
+                bf_df = pd.DataFrame(bf_stats.items(), columns=['Metric', 'Value'])
+                st.dataframe(bf_df, use_container_width=True)
+            
+            # Class distribution if exists
+            if 'class_distribution' in stats_report:
+                st.markdown("#### 🎯 Class Distribution")
+                class_data = stats_report['class_distribution']
+                st.dataframe(pd.DataFrame(class_data.items(), columns=['Class', 'Count']), use_container_width=True)
+            
+            # Regression metrics if available
+            if 'regression_metrics' in stats_report:
+                st.markdown("#### 📈 Regression Performance")
+                reg_metrics = stats_report['regression_metrics']
+                reg_df = pd.DataFrame(reg_metrics.items(), columns=['Metric', 'Value'])
+                st.dataframe(reg_df, use_container_width=True)
+        else:
+            st.info("Upload a file to see statistical analysis")
     
     else:
         st.markdown("#### Model Performance Summary")
@@ -219,15 +419,16 @@ with col2:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Generate Report
+# ============================================
+# Generate Report Logic
+# ============================================
 if generate_btn:
     with st.spinner("🔄 Generating report..."):
         try:
             results_data = []
             
-            # --- 1. Full Analysis Report (جدول النماذج فقط) ---
+            # --- 1. Full Analysis Report ---
             if report_type == "Full Analysis Report":
-                # Add classification results
                 for model, metrics in CLASSIFICATION_RESULTS.items():
                     row = {
                         'Model': model,
@@ -235,30 +436,23 @@ if generate_btn:
                         'Accuracy': f"{metrics['Accuracy']:.1%}",
                         'Precision': f"{metrics['Precision']:.1%}",
                         'Recall': f"{metrics['Recall']:.1%}",
-                        'F1 Score': f"{metrics['F1 Score']:.1%}",
-                        'RMSE': '-',
-                        'R²': '-'
+                        'F1 Score': f"{metrics['F1 Score']:.1%}"
                     }
                     results_data.append(row)
                 
-                # Add regression results
                 for model, metrics in REGRESSION_RESULTS.items():
                     row = {
                         'Model': model,
                         'Type': 'Regression',
-                        'Accuracy': '-',
-                        'Precision': '-',
-                        'Recall': '-',
-                        'F1 Score': '-',
                         'RMSE': f"{metrics['RMSE']:.1f}",
-                        'R²': f"{metrics['R²']:.3f}"
+                        'R²': f"{metrics['R²']:.3f}",
+                        'MAE': f"{metrics['MAE']:.2f}"
                     }
                     results_data.append(row)
                 
                 results_df = pd.DataFrame(results_data)
                 
-                # Create summary dataframe
-                summary_data = {
+                summary_df = pd.DataFrame({
                     'Metric': ['Best Classifier', 'Best Regressor', 'Key Predictor', 'CV Stability'],
                     'Value': [
                         f"MLP Neural Network ({CLASSIFICATION_RESULTS['Neural Network (MLP)']['Accuracy']:.1%})",
@@ -266,72 +460,105 @@ if generate_btn:
                         "Flexibility (r = +0.59)",
                         "MLP: 72.98% ± 1.39%"
                     ]
-                }
-                summary_df = pd.DataFrame(summary_data)
+                })
             
-            # --- 2. Single Prediction Report (بيانات المتدرب ونتيجته فقط) ---
+            # --- 2. Single Prediction Report ---
             elif report_type == "Single Prediction Report" and 'input_data' in locals():
-                # دمج بيانات المستخدم مع النتيجة في صف واحد
                 personal_report = input_data.copy()
                 personal_report['Predicted Class'] = pred_class
                 personal_report['Predicted Broad Jump (cm)'] = round(pred_jump, 1)
                 
-                # الجدول الأساسي (صف واحد فيه كل حاجة)
                 results_df = pd.DataFrame([personal_report])
                 
-                # ملخص سريع للمتدرب
                 summary_df = pd.DataFrame({
                     'Metric': ['Predicted Class', 'Predicted Broad Jump', 'Report Date'],
                     'Value': [pred_class, f"{pred_jump:.1f} cm", datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
                 })
             
-            # --- 3. Batch Summary Report ---
+            # --- 3. Batch Summary Report - مع التقرير الإحصائي ---
             elif report_type == "Batch Summary Report" and 'batch_df' in locals():
-                results_df = batch_df.copy()
+                # إنشاء تقرير إحصائي حقيقي، مش نسخة من البيانات
+                stats_report = st.session_state.get('stats_report', {})
+                
+                # تحويل التقرير الإحصائي إلى DataFrame
+                report_rows = []
+                
+                # Basic info
+                report_rows.append({'Metric': 'Total Records', 'Value': stats_report.get('total_records', 0)})
+                report_rows.append({'Metric': 'Total Columns', 'Value': stats_report.get('total_columns', 0)})
+                
+                # Gender distribution
+                if 'gender_distribution' in stats_report:
+                    for gender, count in stats_report['gender_distribution'].items():
+                        report_rows.append({'Metric': f'Gender - {gender}', 'Value': count})
+                
+                # Age statistics
+                if 'age_stats' in stats_report:
+                    for metric, value in stats_report['age_stats'].items():
+                        report_rows.append({'Metric': f'Age ({metric})', 'Value': f"{value:.1f}"})
+                
+                # Body fat statistics
+                if 'body_fat_stats' in stats_report:
+                    for metric, value in stats_report['body_fat_stats'].items():
+                        report_rows.append({'Metric': f'Body Fat ({metric})', 'Value': f"{value:.1f}"})
+                
+                # Class distribution
+                if 'class_distribution' in stats_report:
+                    for cls, count in stats_report['class_distribution'].items():
+                        report_rows.append({'Metric': f'Class - {cls}', 'Value': count})
+                
+                if 'predicted_class_distribution' in stats_report:
+                    for cls, count in stats_report['predicted_class_distribution'].items():
+                        report_rows.append({'Metric': f'Predicted Class - {cls}', 'Value': count})
+                
+                # Regression metrics
+                if 'regression_metrics' in stats_report:
+                    for metric, value in stats_report['regression_metrics'].items():
+                        report_rows.append({'Metric': f'Regression {metric}', 'Value': f"{value:.2f}"})
+                
+                # Classification accuracy
+                if 'classification_accuracy' in stats_report:
+                    report_rows.append({'Metric': 'Classification Accuracy', 'Value': f"{stats_report['classification_accuracy']:.1%}"})
+                
+                results_df = pd.DataFrame(report_rows)
+                
                 summary_df = pd.DataFrame({
-                    'Metric': ['Total Records', 'Generated Date'],
-                    'Value': [len(batch_df), datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
+                    'Metric': ['Report Type', 'Generated Date', 'Total Records'],
+                    'Value': ['Statistical Analysis Report', datetime.now().strftime('%Y-%m-%d %H:%M:%S'), len(batch_df)]
                 })
             
-            # --- 4. Fallback (لو مفيش بيانات) ---
+            # --- 4. Fallback ---
             else:
                 results_df = pd.DataFrame({'Message': ['No data available. Please fill in participant data or upload a file.']})
                 summary_df = pd.DataFrame({'Message': ['Please configure the report first.']})
             
-            # --- تجهيز الملفات للتحميل ---
-            csv_output = results_df.to_csv(index=False)
-            b64_csv = base64.b64encode(csv_output.encode()).decode()
-            
-            summary_csv = summary_df.to_csv(index=False)
-            b64_summary = base64.b64encode(summary_csv.encode()).decode()
-            
-            # اسم الملف حسب نوع التقرير
-            file_name_safe = report_type.replace(" ", "_").replace("/", "_")
+            # --- Download buttons using st.download_button (correct method) ---
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_name_safe = report_type.replace(" ", "_").replace("/", "_")
             
             st.success("✅ Report generated successfully!")
             
-            # --- زراير التحميل ---
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.markdown(f'''
-                <a href="data:file/csv;base64,{b64_csv}" 
-                   download="{file_name_safe}_{timestamp}.csv" 
-                   style="display: inline-block; padding: 0.5rem 1rem; background-color: #1e3a5f; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">
-                   📥 Download Full Report (CSV)
-                </a>
-                ''', unsafe_allow_html=True)
+            # CSV download for full report
+            csv_output = results_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Full Report (CSV)",
+                data=csv_output,
+                file_name=f"{file_name_safe}_{timestamp}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
             
-            with col_b:
-                st.markdown(f'''
-                <a href="data:file/csv;base64,{b64_summary}" 
-                   download="Summary_{file_name_safe}_{timestamp}.csv" 
-                   style="display: inline-block; padding: 0.5rem 1rem; background-color: #2c4e6e; color: white; border-radius: 8px; text-decoration: none; text-align: center; width: 100%;">
-                   📥 Download Summary (CSV)
-                </a>
-                ''', unsafe_allow_html=True)
+            # Summary download
+            summary_csv = summary_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Summary (CSV)",
+                data=summary_csv,
+                file_name=f"Summary_{file_name_safe}_{timestamp}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
             
-            # --- عرض الـ Preview قبل التحميل ---
+            # Preview
             st.markdown("---")
             st.markdown(f"### 📊 Report Preview: {report_type}")
             
@@ -346,7 +573,9 @@ if generate_btn:
             st.error(f"❌ Error generating report: {e}")
             st.info("Please check your inputs and try again.")
 
+# ============================================
 # Sidebar
+# ============================================
 with st.sidebar:
     st.markdown("### ℹ️ Report Guide")
     st.markdown("""
@@ -354,36 +583,35 @@ with st.sidebar:
     
     1. **Full Analysis Report**
        - Complete model comparison
-       - All metrics and visualizations
-       - Cross validation results
-       - Recommendations
+       - All metrics from trained models
+       - Key insights and recommendations
     
     2. **Single Prediction Report**
        - Individual participant analysis
-       - Prediction results with confidence
+       - Real predictions from trained models
        - Personalized recommendations
     
     3. **Batch Summary Report**
-       - Upload CSV with predictions
-       - Summary statistics
-       - Distribution analysis
+       - Upload CSV for statistical analysis
+       - Generate comprehensive statistics
+       - Gender, age, body fat distributions
+       - Model evaluation metrics (if predictions exist)
     
     ---
     ### 📋 What's Included
     
-    - **Model Performance Tables** (CSV)
-    - **Summary Statistics** (CSV)
-    - **Key Insights**
-    - **Recommendations**
+    - **Statistical Analysis** (mean, median, distribution)
+    - **Model Performance Metrics** (Accuracy, RMSE, R²)
+    - **Demographic Insights** (gender, age groups)
+    - **Downloadable CSV Reports**
     
     ---
     ### 💡 Tips
     
-    - Download reports as CSV files
-    - Full report includes all models
-    - Single report includes participant data
-    - Batch report requires CSV upload
+    - Batch reports generate statistical analysis, not raw data
+    - Single reports use real ML models for predictions
+    - Full report shows all model performance metrics
     """)
     
     st.markdown("---")
-    st.caption(f"Body Performance Analytics | Report Generator v1.0")
+    st.caption("Body Performance Analytics | Report Generator v2.0 - Now with Real ML Integration")
