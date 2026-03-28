@@ -25,7 +25,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.model_loader import load_models
-from utils.prediction import predict_classification, predict_regression
+from utils.prediction import predict_classification
 import io
 
 # ============================================
@@ -109,6 +109,20 @@ if models is None:
     st.stop()
 
 # ============================================
+# STATISTICS FROM NOTEBOOK (من الـ Notebook الأصلي)
+# ============================================
+# هذه الأرقام مأخوذة من الـ Notebook (صفحة 6)
+DATASET_STATS = {
+    'broad_jump_mean': 190.13,
+    'broad_jump_std': 39.87,
+    'broad_jump_min': 71.0,
+    'broad_jump_max': 303.0,
+    'accuracy_mlp': 0.7215,
+    'rmse_mlp': 18.73,
+    'r2_mlp': 0.7791
+}
+
+# ============================================
 # INPUT FORM
 # ============================================
 col_input, col_results = st.columns([1, 1], gap="large")
@@ -171,8 +185,8 @@ def preprocess_input(input_data, scaler):
     X_scaled = scaler.transform(X)
     return X_scaled
 
-def get_class_description(class_label):
-    """Get description for performance class"""
+def get_class_description(class_label, confidence=None):
+    """Get description for performance class with dynamic interpretation"""
     descriptions = {
         'A': {
             'name': 'Excellent Performance',
@@ -204,6 +218,28 @@ def get_class_description(class_label):
         }
     }
     return descriptions.get(class_label, descriptions['D'])
+
+def get_regression_interpretation(pred_value):
+    """Get interpretation based on prediction compared to dataset distribution"""
+    mean = DATASET_STATS['broad_jump_mean']
+    std = DATASET_STATS['broad_jump_std']
+    
+    if pred_value > mean + std:
+        return "🚀 Excellent explosive power! Elite level performance (top 16%)."
+    elif pred_value > mean:
+        return "💪 Above average explosive power. Good athletic capability."
+    elif pred_value > mean - std:
+        return "📊 Average explosive power. Can be improved with plyometric training."
+    else:
+        return "📉 Below average explosive power. Consider targeted strength training."
+
+def predict_regression_safe(model, X_scaled):
+    """Safe prediction function for regression"""
+    try:
+        return model.predict(X_scaled)
+    except Exception as e:
+        st.warning(f"Regression prediction error: {e}")
+        return np.array([DATASET_STATS['broad_jump_mean']])
 
 # ============================================
 # MAKE PREDICTION
@@ -254,14 +290,15 @@ if predict_btn:
                         st.markdown(f"""
                         <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 15px;">
                             <div style="font-size: 1.5rem; font-weight: bold; color: #1e3a5f;">{confidence:.1%}</div>
-                            <div style="font-size: 0.8rem; color: #64748b;">Confidence</div>
+                            <div style="font-size: 0.8rem; color: #64748b;">Model Confidence</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">(MLP Accuracy: {DATASET_STATS['accuracy_mlp']:.1%})</div>
                         </div>
                         """, unsafe_allow_html=True)
                 
                 # Probability distribution chart
                 if proba is not None:
                     st.markdown("---")
-                    st.markdown("**Probability Distribution**")
+                    st.markdown("**Probability Distribution Across Classes**")
                     prob_df = pd.DataFrame({
                         'Class': ['D', 'C', 'B', 'A'],
                         'Probability': proba[0] * 100
@@ -293,7 +330,7 @@ if predict_btn:
                 
                 # Best regressor (MLP Regressor)
                 mlp_reg = models['mlp_regressor']
-                pred_value = predict_regression(mlp_reg, X_scaled)
+                pred_value = predict_regression_safe(mlp_reg, X_scaled)
                 
                 # Display regression result
                 col1, col2 = st.columns(2)
@@ -305,23 +342,17 @@ if predict_btn:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Compare with average
-                avg_jump = 190.13
+                # Compare with dataset average (from actual notebook data)
+                avg_jump = DATASET_STATS['broad_jump_mean']
                 diff = pred_value[0] - avg_jump
                 with col2:
-                    st.metric("Average (Dataset)", f"{avg_jump:.1f} cm", delta=f"{diff:+.1f} cm")
+                    st.metric("Dataset Average", f"{avg_jump:.1f} cm", delta=f"{diff:+.1f} cm")
                 
-                # Interpretation based on prediction
-                if pred_value[0] > 220:
-                    interpretation = "🚀 Excellent explosive power! Elite level performance."
-                elif pred_value[0] > 190:
-                    interpretation = "💪 Above average explosive power. Good athletic capability."
-                elif pred_value[0] > 160:
-                    interpretation = "📊 Average explosive power. Can be improved with plyometric training."
-                else:
-                    interpretation = "📉 Below average explosive power. Consider targeted strength training."
+                # Dynamic interpretation based on actual dataset distribution
+                interpretation = get_regression_interpretation(pred_value[0])
                 
                 st.markdown(f"**Interpretation:** {interpretation}")
+                st.markdown(f"**Model Performance:** RMSE = {DATASET_STATS['rmse_mlp']:.2f} cm, R² = {DATASET_STATS['r2_mlp']:.4f}")
                 st.markdown('</div>', unsafe_allow_html=True)
                 
         except Exception as e:
@@ -349,13 +380,14 @@ with st.sidebar:
     ---
     ### 🏆 Best Models
     - **Classification:** MLP Neural Network (72.15% accuracy)
-    - **Regression:** MLP Regressor (R² = 0.7791)
+    - **Regression:** MLP Regressor (R² = 0.7791, RMSE = 18.73 cm)
     
     ---
     ### 📊 Key Predictors
     - Flexibility (r = +0.59)
-    - Muscular Endurance (r = +0.45)
+    - Sit-ups (r = +0.45)
     - Body Fat (r = -0.34)
+    - Grip Force (r = +0.48)
     """)
     
     st.markdown("---")
