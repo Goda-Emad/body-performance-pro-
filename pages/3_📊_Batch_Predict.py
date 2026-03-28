@@ -173,13 +173,23 @@ if uploaded_file and predict_btn:
                 st.info("Please ensure your file has all required columns. Download the sample template.")
                 st.stop()
             
-            # Preprocess - تعديل: تمرير target_column بشكل صحيح
+            # ============================================
+            # التعديل الأساسي - إصلاح مشكلة unpacking
+            # ============================================
+            # Preprocess - معالجة البيانات مع التعامل مع الـ target
             try:
+                # المحاولة الأولى: استخدام target_col
                 X_scaled, y_true, warnings = preprocess_batch_data(df, models['scaler'], target_col='broad jump_cm')
             except TypeError:
-                # لو الـ function مش بتقبل target_col، جرب بدونها
-                X_scaled, warnings = preprocess_batch_data(df, models['scaler'])
+                # المحاولة الثانية: الدالة لا تقبل target_col
+                # نستقبل الـ 3 قيم كاملة (X_scaled, y_tmp, warnings)
+                X_scaled, y_tmp, warnings = preprocess_batch_data(df, models['scaler'])
+                # نحدد الـ y_true من الداتا فريم نفسه
                 y_true = df['broad jump_cm'] if 'broad jump_cm' in df.columns else None
+            except Exception as e:
+                # لو في خطأ تاني، نعرضه
+                st.error(f"❌ Error in preprocessing: {e}")
+                st.stop()
             
             if warnings:
                 for w in warnings:
@@ -193,12 +203,16 @@ if uploaded_file and predict_btn:
                 clf_key = clf_map[clf_model]
                 clf = models[clf_key]
                 
-                # Get predictions - تعديل: handle return_proba gracefully
+                # Get predictions - handle return_proba gracefully
                 try:
                     pred_classes, probas = predict_classification(clf, X_scaled, return_proba=True)
                 except TypeError:
                     # لو الدالة مش بتدعم return_proba، جرب بدونها
                     pred_classes = predict_classification(clf, X_scaled)
+                    probas = None
+                except Exception as e:
+                    st.error(f"❌ Classification prediction error: {e}")
+                    pred_classes = np.array(['Error'] * len(X_scaled))
                     probas = None
                 
                 results_df['predicted_class'] = pred_classes
@@ -208,7 +222,7 @@ if uploaded_file and predict_btn:
                     class_names = ['D', 'C', 'B', 'A']
                     for i, name in enumerate(class_names):
                         if i < probas.shape[1]:
-                            results_df[f'prob_{name}'] = probas[:, i]
+                            results_df[f'prob_{name}'] = probas[:, i].round(3)
                 
                 st.success(f"✅ Classification predictions added for {len(df)} samples")
             
@@ -217,10 +231,12 @@ if uploaded_file and predict_btn:
                 reg_key = reg_map[reg_model]
                 reg = models[reg_key]
                 
-                pred_values = reg.predict(X_scaled)
-                results_df['predicted_broad_jump_cm'] = pred_values.round(1)
-                
-                st.success(f"✅ Regression predictions added for {len(df)} samples")
+                try:
+                    pred_values = reg.predict(X_scaled)
+                    results_df['predicted_broad_jump_cm'] = pred_values.round(1)
+                    st.success(f"✅ Regression predictions added for {len(df)} samples")
+                except Exception as e:
+                    st.error(f"❌ Regression prediction error: {e}")
             
             # Display results in right column
             with col_right:
@@ -231,11 +247,11 @@ if uploaded_file and predict_btn:
                 col1, col2, col3 = st.columns(3)
                 with col1:
                     st.metric("Total Samples", len(df))
-                if prediction_type in ["Classification Only", "Both"]:
+                if prediction_type in ["Classification Only", "Both"] and 'predicted_class' in results_df.columns:
                     class_counts = results_df['predicted_class'].value_counts()
                     with col2:
                         st.metric("Classes Predicted", len(class_counts))
-                if prediction_type in ["Regression Only", "Both"]:
+                if prediction_type in ["Regression Only", "Both"] and 'predicted_broad_jump_cm' in results_df.columns:
                     with col3:
                         st.metric("Avg Jump (Pred)", f"{results_df['predicted_broad_jump_cm'].mean():.1f} cm")
                 
@@ -244,10 +260,7 @@ if uploaded_file and predict_btn:
                 # Show results table
                 st.markdown("### Results Preview")
                 
-                # ============================================
-                # التعديل المطلوب - إصلاح عرض الأعمدة
-                # ============================================
-                # عرض أول 6 أعمدة من الميزات (بدون تكرار gender)
+                # عرض الأعمدة المناسبة
                 display_cols = get_feature_names()[:6]
                 
                 if prediction_type in ["Classification Only", "Both"]:
@@ -255,7 +268,9 @@ if uploaded_file and predict_btn:
                 if prediction_type in ["Regression Only", "Both"]:
                     display_cols.append('predicted_broad_jump_cm')
                 
-                st.dataframe(results_df[display_cols].head(20), use_container_width=True)
+                # التأكد من وجود الأعمدة قبل العرض
+                available_cols = [col for col in display_cols if col in results_df.columns]
+                st.dataframe(results_df[available_cols].head(20), use_container_width=True)
                 
                 if len(df) > 20:
                     st.caption(f"Showing first 20 of {len(df)} rows")
@@ -266,76 +281,85 @@ if uploaded_file and predict_btn:
                 
                 # Class distribution
                 if prediction_type in ["Classification Only", "Both"] and 'predicted_class' in results_df.columns:
-                    fig = px.pie(
-                        results_df, 
-                        names='predicted_class', 
-                        title='Predicted Class Distribution',
-                        color_discrete_sequence=['#1e3a5f', '#2c4e6e', '#4682b4', '#94a3b8']
-                    )
-                    fig.update_layout(height=400)
-                    st.plotly_chart(fig, use_container_width=True)
+                    try:
+                        fig = px.pie(
+                            results_df, 
+                            names='predicted_class', 
+                            title='Predicted Class Distribution',
+                            color_discrete_sequence=['#1e3a5f', '#2c4e6e', '#4682b4', '#94a3b8']
+                        )
+                        fig.update_layout(height=400)
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.warning(f"Could not create pie chart: {e}")
                 
                 # Regression distribution
                 if prediction_type in ["Regression Only", "Both"] and 'predicted_broad_jump_cm' in results_df.columns:
-                    fig = go.Figure()
-                    fig.add_trace(go.Histogram(
-                        x=results_df['predicted_broad_jump_cm'],
-                        nbinsx=30,
-                        marker_color='#1e3a5f',
-                        opacity=0.7
-                    ))
-                    fig.update_layout(
-                        title="Predicted Broad Jump Distribution",
-                        xaxis_title="Broad Jump (cm)",
-                        yaxis_title="Count",
-                        height=400,
-                        template="plotly_white"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                    try:
+                        fig = go.Figure()
+                        fig.add_trace(go.Histogram(
+                            x=results_df['predicted_broad_jump_cm'],
+                            nbinsx=30,
+                            marker_color='#1e3a5f',
+                            opacity=0.7
+                        ))
+                        fig.update_layout(
+                            title="Predicted Broad Jump Distribution",
+                            xaxis_title="Broad Jump (cm)",
+                            yaxis_title="Count",
+                            height=400,
+                            template="plotly_white"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    except Exception as e:
+                        st.warning(f"Could not create histogram: {e}")
                 
                 # Comparison with actual if available
                 if 'broad jump_cm' in df.columns and prediction_type in ["Regression Only", "Both"] and 'predicted_broad_jump_cm' in results_df.columns:
                     st.markdown("---")
                     st.markdown("### 📊 Prediction vs Actual")
                     
-                    fig = go.Figure()
-                    fig.add_trace(go.Scatter(
-                        x=results_df['broad jump_cm'],
-                        y=results_df['predicted_broad_jump_cm'],
-                        mode='markers',
-                        marker=dict(color='#1e3a5f', size=8, opacity=0.6),
-                        name='Predictions'
-                    ))
-                    
-                    # Add perfect prediction line
-                    max_val = max(results_df['broad jump_cm'].max(), results_df['predicted_broad_jump_cm'].max())
-                    fig.add_trace(go.Scatter(
-                        x=[0, max_val],
-                        y=[0, max_val],
-                        mode='lines',
-                        line=dict(color='red', dash='dash'),
-                        name='Perfect Prediction'
-                    ))
-                    
-                    fig.update_layout(
-                        title="Actual vs Predicted Broad Jump",
-                        xaxis_title="Actual (cm)",
-                        yaxis_title="Predicted (cm)",
-                        height=450,
-                        template="plotly_white"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Calculate error metrics
-                    errors = results_df['broad jump_cm'] - results_df['predicted_broad_jump_cm']
-                    mae = errors.abs().mean()
-                    rmse = np.sqrt((errors**2).mean())
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Mean Absolute Error", f"{mae:.1f} cm")
-                    with col2:
-                        st.metric("RMSE", f"{rmse:.1f} cm")
+                    try:
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(
+                            x=results_df['broad jump_cm'],
+                            y=results_df['predicted_broad_jump_cm'],
+                            mode='markers',
+                            marker=dict(color='#1e3a5f', size=8, opacity=0.6),
+                            name='Predictions'
+                        ))
+                        
+                        # Add perfect prediction line
+                        max_val = max(results_df['broad jump_cm'].max(), results_df['predicted_broad_jump_cm'].max())
+                        fig.add_trace(go.Scatter(
+                            x=[0, max_val],
+                            y=[0, max_val],
+                            mode='lines',
+                            line=dict(color='red', dash='dash'),
+                            name='Perfect Prediction'
+                        ))
+                        
+                        fig.update_layout(
+                            title="Actual vs Predicted Broad Jump",
+                            xaxis_title="Actual (cm)",
+                            yaxis_title="Predicted (cm)",
+                            height=450,
+                            template="plotly_white"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Calculate error metrics
+                        errors = results_df['broad jump_cm'] - results_df['predicted_broad_jump_cm']
+                        mae = errors.abs().mean()
+                        rmse = np.sqrt((errors**2).mean())
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.metric("Mean Absolute Error", f"{mae:.1f} cm")
+                        with col2:
+                            st.metric("RMSE", f"{rmse:.1f} cm")
+                    except Exception as e:
+                        st.warning(f"Could not create comparison chart: {e}")
                 
                 st.markdown('</div>', unsafe_allow_html=True)
                 
