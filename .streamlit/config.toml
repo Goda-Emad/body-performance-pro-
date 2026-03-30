@@ -1,20 +1,20 @@
 # ============================================
 # Streamlit Configuration File
-# Body Performance Analytics - Professional Dark Theme
+# Body Performance Analytics - Professional Light Theme
 # ============================================
 
 [theme]
 # اللون الأساسي للأزرار والروابط والعناصر التفاعلية
 primaryColor = "#00A3C4"
 
-# خلفية الصفحة الرئيسية (الوضع الداكن الاحترافي)
-backgroundColor = "#0E1117"
+# خلفية الصفحة الرئيسية (أبيض ناعم)
+backgroundColor = "#FFFFFF"
 
-# خلفية العناصر الثانوية مثل الكروت والسايد بار
-secondaryBackgroundColor = "#161B22"
+# خلفية العناصر الثانوية مثل الكروت والسايد بار (رمادي فاتح جدًا)
+secondaryBackgroundColor = "#F8F9FC"
 
-# لون النصوص الرئيسية
-textColor = "#EAEAEA"
+# لون النصوص الرئيسية (رمادي غامق لتباين جيد)
+textColor = "#1E1E2F"
 
 # نوع الخط المستخدم في التطبيق
 font = "sans serif"
