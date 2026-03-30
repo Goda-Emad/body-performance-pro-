@@ -1,5 +1,5 @@
 /* ========================================= */
-/* Body Performance Analytics - Professional Dark Theme */
+/* Body Performance Analytics - Professional Light Theme */
 /* ========================================= */
 
 /* ========================================= */
@@ -13,11 +13,11 @@ div[data-testid="stMetric"],
 /* استهداف كروت الـ st.info في Explore */
 div.element-container,
 div[data-testid="stAlert"] {
-    background: var(--st-color-background-secondary) !important;
+    background: #ffffff !important;
     border-radius: 12px;
     padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     text-align: center;
 }
@@ -29,13 +29,13 @@ div[data-testid="stMetric"]:hover,
 div.element-container:hover,
 div[data-testid="stAlert"]:hover {
     transform: translateY(-5px);
-    border-color: var(--st-color-primary) !important;
-    box-shadow: 0 8px 30px rgba(0, 163, 196, 0.2);
+    border-color: #00A3C4 !important;
+    box-shadow: 0 8px 30px rgba(0, 163, 196, 0.15);
 }
 
 /* حل مشكلة تباين نصوص كروت الـ st.info في Explore */
 div[data-testid="stAlert"] p {
-    color: var(--st-color-text) !important;
+    color: #1e1e2f !important;
 }
 
 /* ========================================= */
@@ -43,7 +43,7 @@ div[data-testid="stAlert"] p {
 /* ========================================= */
 
 h1, h2, h3, h4, h5, h6 {
-    color: var(--st-color-primary) !important;
+    color: #00A3C4 !important;
     font-weight: 700 !important;
 }
 
@@ -53,13 +53,13 @@ h1, h2, h3, h4, h5, h6 {
 [data-testid="stMarkdownContainer"] p,
 .stMarkdown p,
 p {
-    color: var(--st-color-text-secondary) !important;
+    color: #4a4a6a !important;
     opacity: 1 !important;
 }
 
 /* الأرقام الرئيسية */
 [data-testid="stMetricValue"] {
-    color: var(--st-color-text) !important;
+    color: #1e1e2f !important;
     font-size: 2.5rem !important;
     font-weight: 700 !important;
 }
@@ -69,12 +69,12 @@ p {
 /* ========================================= */
 
 [data-testid="stSidebar"] {
-    background-color: var(--st-color-background-secondary) !important;
-    border-right: 1px solid rgba(0, 163, 196, 0.1);
+    background-color: #f8f9fc !important;
+    border-right: 1px solid rgba(0, 163, 196, 0.2);
 }
 
 [data-testid="stSidebarNav"] a {
-    color: var(--st-color-text) !important;
+    color: #1e1e2f !important;
     text-decoration: none !important;
     padding: 8px 12px !important;
     border-radius: 8px !important;
@@ -83,8 +83,8 @@ p {
 }
 
 [data-testid="stSidebarNav"] a:hover {
-    color: var(--st-color-primary) !important;
-    background-color: rgba(0, 163, 196, 0.1) !important;
+    color: #00A3C4 !important;
+    background-color: rgba(0, 163, 196, 0.08) !important;
 }
 
 /* ========================================= */
@@ -92,22 +92,22 @@ p {
 /* ========================================= */
 
 .main-header {
-    background: linear-gradient(135deg, rgba(0, 163, 196, 0.1) 0%, rgba(14, 17, 23, 0) 100%);
+    background: linear-gradient(135deg, rgba(0, 163, 196, 0.08) 0%, rgba(248, 249, 252, 0) 100%);
     padding: 30px;
     border-radius: 12px;
-    border-left: 5px solid var(--st-color-primary);
+    border-left: 5px solid #00A3C4;
     text-align: center;
     margin-bottom: 25px;
 }
 
 .main-header h1 {
-    color: var(--st-color-text) !important;
+    color: #1e1e2f !important;
     margin: 0;
     font-size: 2.2rem;
 }
 
 .main-header p {
-    color: var(--st-color-primary);
+    color: #00A3C4;
     margin-top: 8px;
     opacity: 0.85;
     font-size: 1rem;
@@ -130,7 +130,7 @@ p {
 
 .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 163, 196, 0.4) !important;
+    box-shadow: 0 4px 12px rgba(0, 163, 196, 0.3) !important;
 }
 
 /* ========================================= */
@@ -140,17 +140,17 @@ p {
 .stTextInput > div > div > input,
 .stNumberInput > div > div > input,
 .stSelectbox > div > div > select {
-    background-color: var(--st-color-background-secondary) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background-color: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
     border-radius: 8px !important;
-    color: var(--st-color-text) !important;
+    color: #1e1e2f !important;
     padding: 8px 12px !important;
 }
 
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > div > input:focus {
-    border-color: var(--st-color-primary) !important;
-    box-shadow: 0 0 0 2px rgba(0, 163, 196, 0.2) !important;
+    border-color: #00A3C4 !important;
+    box-shadow: 0 0 0 2px rgba(0, 163, 196, 0.15) !important;
 }
 
 /* ========================================= */
@@ -158,26 +158,26 @@ p {
 /* ========================================= */
 
 .dataframe {
-    background: var(--st-color-background-secondary) !important;
+    background: #ffffff !important;
     border-radius: 12px !important;
     overflow: hidden !important;
 }
 
 .dataframe th {
-    background: var(--st-color-primary) !important;
+    background: #00A3C4 !important;
     color: white !important;
     padding: 10px !important;
 }
 
 .dataframe td {
-    background: var(--st-color-background-secondary) !important;
-    color: var(--st-color-text) !important;
+    background: #ffffff !important;
+    color: #1e1e2f !important;
     padding: 8px 10px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
 .dataframe tr:hover td {
-    background: rgba(0, 163, 196, 0.1) !important;
+    background: rgba(0, 163, 196, 0.05) !important;
 }
 
 /* ========================================= */
@@ -186,7 +186,7 @@ p {
 
 .stTabs [data-baseweb="tab-list"] {
     gap: 8px;
-    background: var(--st-color-background-secondary);
+    background: #f8f9fc;
     padding: 8px;
     border-radius: 12px;
     margin-bottom: 16px;
@@ -195,13 +195,13 @@ p {
 .stTabs [data-baseweb="tab"] {
     background: transparent !important;
     border-radius: 8px !important;
-    color: var(--st-color-text-secondary) !important;
+    color: #4a4a6a !important;
     padding: 8px 20px !important;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
-    color: var(--st-color-primary) !important;
-    background: rgba(0, 163, 196, 0.1) !important;
+    color: #00A3C4 !important;
+    background: rgba(0, 163, 196, 0.08) !important;
 }
 
 .stTabs [aria-selected="true"] {
@@ -217,11 +217,11 @@ p {
     text-align: center;
     padding: 20px;
     margin-top: 30px;
-    background: var(--st-color-background-secondary);
+    background: #f8f9fc;
     border-radius: 12px;
-    color: var(--st-color-text-secondary);
+    color: #4a4a6a;
     font-size: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* ========================================= */
@@ -234,21 +234,22 @@ p {
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--st-color-background-secondary);
+    background: #f0f2f6;
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--st-color-primary);
+    background: #00A3C4;
     border-radius: 10px;
 }
+
 /* تنسيق كروت صفحة About */
 .card {
-    background: var(--st-color-background-secondary) !important;
+    background: #ffffff !important;
     border-radius: 12px;
     padding: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     margin-bottom: 25px;
 }
 
@@ -257,7 +258,7 @@ p {
 }
 
 .card-title {
-    color: var(--st-color-primary) !important;
+    color: #00A3C4 !important;
     font-size: 1.6rem;
     font-weight: 700;
     margin-bottom: 20px;
